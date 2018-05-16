@@ -22,12 +22,12 @@ lazy val baseSettings = Seq(
   scalacOptions in (Test, console) ~= {
     _.filterNot(Set("-Ywarn-unused-import"))
   },
-  scalaVersion := "2.12.5",
+  scalaVersion := "2.12.6",
   version := "0.1.0-SNAPSHOT"
 )
 
-lazy val fs2Version = "0.10.3"
-lazy val circeVersion = "0.9.2"
+lazy val fs2Version = "0.10.4"
+lazy val circeVersion = "0.9.3"
 lazy val awsSdkVersion = "1.11.301"
 lazy val scalatestVersion = "3.0.5"
 lazy val mockitoVersion = "2.17.0"
