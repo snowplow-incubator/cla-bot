@@ -31,6 +31,8 @@ lazy val circeVersion = "0.9.3"
 lazy val github4sVersion = "0.18.4"
 lazy val gsheeets4sVersion = "0.1.0-SNAPSHOT"
 lazy val circeConfigVersion = "0.4.1"
+lazy val scalajHttpVersion = "2.4.0"
+lazy val json4sVersion = "3.5.3"
 lazy val awsSdkVersion = "1.11.301"
 lazy val scalatestVersion = "3.0.5"
 lazy val mockitoVersion = "2.17.0"
@@ -44,6 +46,8 @@ lazy val claBot = project.in(file("."))
       "com.47deg" %% "github4s" % github4sVersion,
       "com.github.benfradet" %% "gsheets4s" % gsheeets4sVersion,
       "io.circe" %% "circe-config" % circeConfigVersion,
+      "org.scalaj" %% "scalaj-http" % scalajHttpVersion,
+      "org.json4s" %% "json4s-native" % json4sVersion,
       "com.amazonaws" % "aws-java-sdk-sqs" % awsSdkVersion
     ) ++ Seq(
       "io.circe" %% "circe-core",
