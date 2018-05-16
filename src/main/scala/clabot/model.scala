@@ -1,7 +1,5 @@
 package clabot
 
-import github4s.free.domain.PullRequest
-
 object model {
   /**
    * Event emitted by the github hooks for pull request.
@@ -12,8 +10,12 @@ object model {
   case class PullRequestEvent(
     action: String,
     number: Int,
-    pull_request: PullRequest
+    repository: Repository,
+    sender: Sender
   )
+
+  case class Repository(full_name: String)
+  case class Sender(login: String)
 
   /**
    * Internal representation of a PR with only the necessary components.
