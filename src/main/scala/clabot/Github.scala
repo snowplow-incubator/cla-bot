@@ -2,12 +2,11 @@ package clabot
 
 import cats.effect.IO
 import org.json4s.DefaultFormats
-import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization.write
 import scalaj.http.{Http, HttpResponse}
 
-case class Github (token: String) {
+class Github(token: String) {
 
   implicit val formats = DefaultFormats
 

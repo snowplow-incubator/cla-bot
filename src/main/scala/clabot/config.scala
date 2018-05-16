@@ -3,7 +3,7 @@ package clabot
 import gsheets4s.model.Credentials
 
 object config {
-  case class GithubConfig(token: String)
+  case class GithubConfig(token: String, org: String)
   case class AwsConfig(sqsQueueUrl: String)
   case class GSheetsConfig(
     accessToken: String,
