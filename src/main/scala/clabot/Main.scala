@@ -72,7 +72,7 @@ object Main {
     val notBotStream: Stream[IO, PR] = pullRequestStream.filter(_.creator != conf.github.botName)
 
     // filter comments that dont contain a bot ping
-    val hasBotPing: Stream[IO, PR] = pullRequestStream.filter(_.body.contains(s"@${conf.github.botName}"))
+    val hasBotPing: Stream[IO, PR] = pullRequestStream.filter(pr => pr.body.isDefined && pr.body.get.contains(s"@${conf.github.botName}"))
 
     // filter prs which already have cla:yes label
     val claNotSignedStream: Stream[IO, PR] = hasBotPing
