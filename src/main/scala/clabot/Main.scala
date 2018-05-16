@@ -58,20 +58,24 @@ object Main {
       .map { event => (
         event.repository.full_name,
         event.sender.login,
-        event.issue.number
+        event.issue.number,
+        event.comment.body
       ) }
       .filter(_._2 != conf.github.botName)
-      .collect { case (fullName, login, n) =>
+      .collect { case (fullName, login, n, body) =>
         val Array(owner, repoName) = fullName.split("/")
-        PR(owner, repoName, login, n)
+        PR(owner, repoName, login, n, Some(body))
       }
       .observe(loggingSink)
 
     // filter comments which have been made by the bot itself
     val notBotStream: Stream[IO, PR] = pullRequestStream.filter(_.creator != conf.github.botName)
 
+    // filter comments that dont contain a bot ping
+    val hasBotPing: Stream[IO, PR] = pullRequestStream.filter(_.body.contains(s"@${conf.github.botName}"))
+
     // filter prs which already have cla:yes label
-    val claNotSignedStream: Stream[IO, PR] = notBotStream
+    val claNotSignedStream: Stream[IO, PR] = hasBotPing
       .evalMap { pr =>
         github.listLabels(pr.owner, pr.repo, pr.number.toString)
           .map((pr, _))

@@ -17,12 +17,13 @@ object model {
   case class IssueCommentEvent(
     action: String,
     issue: Issue,
+    comment: Comment,
     repository: Repository,
     sender: Sender
   )
 
   case class Issue(url: String, number: Int)
-
+  case class Comment(body: String)
   case class Repository(full_name: String)
   case class Sender(login: String)
 
@@ -32,11 +33,13 @@ object model {
    * @param repo name of the repository
    * @param creator name of the pull request creator
    * @param number of the pull pull request
+   * @param body contents of the pull request comment (if applicable)
    */
   case class PR(
     owner: String,
     repo: String,
     creator: String,
-    number: Int
+    number: Int,
+    body: Option[String]
   )
 }
