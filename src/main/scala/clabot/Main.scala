@@ -45,13 +45,15 @@ object Main {
     val rmr = new ReceiveMessageRequest(conf.aws.sqsQueueUrl)
       .withMaxNumberOfMessages(1)
       .withWaitTimeSeconds(10)
+    val dmr = (m: Message) => new DeleteMessageRequest(conf.aws.sqsQueueUrl, m.getReceiptHandle())
     val sqsStream: Stream[IO, Message] = sqs
       .messageStream(client, rmr)
-      .observe(loggingSink)
+      .observe(sqs.deleteSink(client, dmr))
 
     val pullRequestStream: Stream[IO, PR] = sqsStream
       .map(m => decode[PullRequestEvent](m.getBody))
       .collect { case Right(pr) => pr }
+      .filter(pr => Seq("opened", "edited", "synchronize", "reopened").contains(pr.action))
       .map { event => (
         event.repository.full_name,
         event.sender.login,
@@ -82,6 +84,7 @@ object Main {
           .get(conf.gsheets.spreadsheetId, conf.gsheets.sheetName, conf.gsheets.column)
           .map((pr, _))
       }
+      .collect { case (pr, Right(signers)) => (pr, signers) }
       .map { case (pr, signers) => (pr, signers.contains(pr.creator))}
       .observe(loggingSink)
 
