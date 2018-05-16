@@ -48,6 +48,7 @@ lazy val claBot = project.in(file("."))
       "io.circe" %% "circe-config" % circeConfigVersion,
       "org.scalaj" %% "scalaj-http" % scalajHttpVersion,
       "org.json4s" %% "json4s-native" % json4sVersion,
+      "org.json4s" %% "json4s-jackson" % json4sVersion,
       "com.amazonaws" % "aws-java-sdk-sqs" % awsSdkVersion
     ) ++ Seq(
       "io.circe" %% "circe-core",
