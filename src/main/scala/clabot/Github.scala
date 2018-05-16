@@ -19,6 +19,13 @@ class Github(token: String) {
       .asString
   }
 
+  def listLabels(owner: String, repo: String, issue: String): IO[List[String]] = IO {
+    val response = Http(s"$GITHUB_URI/repos/$owner/$repo/issues/$issue/labels")
+      .header("Authorization", s"token $token")
+      .asString
+    parse(response.body).values.asInstanceOf[List[Map[String, String]]].flatMap(_.get("name"))
+  }
+
   def addLabel(owner: String, repo: String, issue: String, label: String): IO[HttpResponse[String]] = IO {
     Http(s"$GITHUB_URI/repos/$owner/$repo/issues/$issue/labels")
       .header("Authorization", s"token $token")
