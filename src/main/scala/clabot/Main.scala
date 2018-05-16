@@ -39,11 +39,12 @@ object Main {
       .collect { case Right(pr) => pr }
       .map { event => (
         event.pull_request.base.flatMap(_.repo),
+        event.pull_request.base.flatMap(_.user).map(_.login),
         event.number
       ) }
-      .collect { case (Some(repo), n) =>
+      .collect { case (Some(repo), Some(login), n) =>
         val Array(owner, repoName) = repo.full_name.split("/")
-        PR(owner, repoName, n)
+        PR(owner, repoName, login, n)
       }
 
     // filter pr creator who are in the org
