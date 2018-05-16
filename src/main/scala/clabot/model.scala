@@ -14,6 +14,15 @@ object model {
     sender: Sender
   )
 
+  case class IssueCommentEvent(
+    action: String,
+    issue: Issue,
+    repository: Repository,
+    sender: Sender
+  )
+
+  case class Issue(url: String, number: Int)
+
   case class Repository(full_name: String)
   case class Sender(login: String)
 
