@@ -28,7 +28,9 @@ lazy val baseSettings = Seq(
 
 lazy val fs2Version = "0.10.4"
 lazy val circeVersion = "0.9.3"
+lazy val github4sVersion = "0.18.4"
 lazy val gsheeets4sVersion = "0.1.0-SNAPSHOT"
+lazy val circeConfigVersion = "0.4.1"
 lazy val awsSdkVersion = "1.11.301"
 lazy val scalatestVersion = "3.0.5"
 lazy val mockitoVersion = "2.17.0"
@@ -39,7 +41,9 @@ lazy val claBot = project.in(file("."))
   .settings(
     libraryDependencies ++= Seq(
       "co.fs2" %% "fs2-core" % fs2Version,
+      "com.47deg" %% "github4s" % github4sVersion,
       "com.github.benfradet" %% "gsheets4s" % gsheeets4sVersion,
+      "io.circe" %% "circe-config" % circeConfigVersion,
       "com.amazonaws" % "aws-java-sdk-sqs" % awsSdkVersion
     ) ++ Seq(
       "io.circe" %% "circe-core",
