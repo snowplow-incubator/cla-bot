@@ -16,9 +16,9 @@ object Main {
   private val client = AmazonSQSAsyncClientBuilder.defaultClient()
 
   def main(args: Array[String]): Unit = {
-    val config = ConfigFactory.load()
+    val conf = ConfigFactory.load()
 
-    config.as[ClaBotConfig] match {
+    conf.as[ClaBotConfig] match {
       case Left(e) =>
         System.err.println(s"configuration error: $e")
         System.exit(1)
@@ -27,9 +27,11 @@ object Main {
     }
   }
 
-  def main(config: ClaBotConfig): Unit = {
+  def main(conf: ClaBotConfig): Unit = {
+    val gsheets = new GSheets(conf.gsheets.toCredentials)
+
     // get pr event stream
-    val rmr = new ReceiveMessageRequest(config.aws.sqsQueueUrl)
+    val rmr = new ReceiveMessageRequest(conf.aws.sqsQueueUrl)
       .withMaxNumberOfMessages(1)
       .withWaitTimeSeconds(10)
     val sqsStream: Stream[IO, Message] = sqs.messageStream(client, rmr)
@@ -48,7 +50,16 @@ object Main {
       }
 
     // filter pr creator who are in the org
+
     // check the google sheet
+    val hasSignedClaStream: Stream[IO, (PR, Boolean)] = pullRequestStream
+      .evalMap { pr =>
+        gsheets
+          .get(conf.gsheets.spreadsheetId, conf.gsheets.sheetName, conf.gsheets.column)
+          .map((pr, _))
+      }
+      .map { case (pr, signers) => (pr, signers.contains(pr.creator))}
+
     // post a message saying yes / no
   }
 }

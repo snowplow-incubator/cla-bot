@@ -19,13 +19,13 @@ object model {
    * Internal representation of a PR with only the necessary components.
    * @param owner of the repository
    * @param repo name of the repository
-   * @param login name of the pull request creator
+   * @param creator name of the pull request creator
    * @param number of the pull pull request
    */
   case class PR(
     owner: String,
     repo: String,
-    login: String,
+    creator: String,
     number: Int
   )
 }

@@ -9,7 +9,7 @@ import fs2.async
 import gsheets4s.interpreters.RestSpreadsheetsValues
 import gsheets4s.model._
 
-class Gsheets(credentials: Credentials) {
+class GSheets(credentials: Credentials) {
   private val credsRef = async.refOf[IO, Credentials](credentials)
   private implicit val interpreter = hammock.jvm.Interpreter[IO]
 
