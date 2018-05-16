@@ -40,6 +40,13 @@ class Github(token: String) {
       .asString
   }
 
+  def getPull(owner: String, repo: String, pr: String): IO[HttpResponse[String]] = IO {
+    Http(s"$GITHUB_URI/repos/$owner/$repo/pulls/$pr")
+      .header("Authorization", s"token $token")
+      .asString
+    // HttpResponse.isSuccess to check if it exists
+  }
+
   def listMembers(org: String): IO[List[String]] = IO {
     val response = Http(s"$GITHUB_URI/orgs/$org/members")
       .header("Authorization", s"token $token")
