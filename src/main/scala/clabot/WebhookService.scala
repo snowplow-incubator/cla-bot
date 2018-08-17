@@ -1,24 +1,24 @@
 package clabot
 
-import concurrent.ExecutionContext.Implicits.global
-
+import cats.temp.par._
 import cats.data.OptionT
 import cats.implicits._
 import cats.effect._
 
 import org.http4s._
-import org.http4s.dsl.io._
+import org.http4s.dsl.Http4sDsl
 import org.http4s.util.CaseInsensitiveString
 
 import clabot.model.{Issue, IssueCommentEvent, PullRequestEvent}
 import clabot.GithubService._
 
 
-class WebhookService(sheetsService: GSheetsService, githubService: GithubService) {
+class WebhookService[F[_]: Sync : Par](sheetsService: GSheetsService[F], githubService: GithubService[F])
+  extends Http4sDsl[F] {
 
   import org.http4s.circe.CirceEntityDecoder._
 
-  val endpoints = HttpRoutes.of[IO] {
+  val endpoints = HttpRoutes.of[F] {
     case req @ POST -> Root / "webhook" =>
       val eventType = req.headers
         .get(CaseInsensitiveString("X-GitHub-Event"))
@@ -27,13 +27,17 @@ class WebhookService(sheetsService: GSheetsService, githubService: GithubService
       eventType match {
         case Some("pull_request")  => req.as[PullRequestEvent]
                                         .flatMap(handlePullRequest)
-                                        .handleErrorWith(error => InternalServerError(error.getMessage))
-                                        .flatMap(_ => Ok())
+                                        .attempt.flatMap {
+                                          case Left(error) => InternalServerError(error.getMessage)
+                                          case Right(_) => Ok()
+                                        }
 
         case Some("issue_comment") => req.as[IssueCommentEvent]
                                         .flatMap(handleIssueComment)
-                                        .handleErrorWith(error => InternalServerError(error.getMessage))
-                                        .flatMap(_ => Ok())
+                                        .attempt.flatMap {
+                                          case Left(error) => InternalServerError(error.getMessage)
+                                          case Right(_) => Ok()
+                                        }
 
         case Some("ping")          => Ok("pong")
         case Some(otherEventType)  => BadRequest(s"Unknown event type $otherEventType")
@@ -42,24 +46,24 @@ class WebhookService(sheetsService: GSheetsService, githubService: GithubService
   }
 
 
-  def handlePullRequest(prEvent: PullRequestEvent): IO[Unit] =
+  def handlePullRequest(prEvent: PullRequestEvent): F[Unit] =
     if (prEvent.action === "opened") {
       handleNewPullRequest(prEvent)
     } else {
-      IO.unit
+      Sync[F].unit
     }
 
 
-  def handleNewPullRequest(prEvent: PullRequestEvent): IO[Unit] =
+  def handleNewPullRequest(prEvent: PullRequestEvent): F[Unit] =
     OptionT(sheetsService.findLogin(prEvent.sender.login))
       .semiflatMap(_ => githubService.addLabel(prEvent.repository, Issue(prEvent.number), YesLabel).map(_ => ()))
       .getOrElseF(handleNoCla(prEvent))
 
 
-  def handleNoCla(prEvent: PullRequestEvent): IO[Unit] =
-    OptionT(IO.pure(prEvent.organization))
+  def handleNoCla(prEvent: PullRequestEvent): F[Unit] =
+    OptionT(Sync[F].pure(prEvent.organization))
       .flatMapF(org => githubService.findMember(org, prEvent.sender))
-      .semiflatMap(_ => IO.unit)
+      .semiflatMap(_ => Sync[F].unit)
       .getOrElseF {
         val addLabel = githubService.addLabel(prEvent.repository, Issue(prEvent.number), NoLabel)
         val comment  = githubService.postComment(prEvent.repository, Issue(prEvent.number), noMessage)
@@ -68,15 +72,15 @@ class WebhookService(sheetsService: GSheetsService, githubService: GithubService
       }
 
 
-  def handleIssueComment(commentEvent: IssueCommentEvent): IO[Unit] =
+  def handleIssueComment(commentEvent: IssueCommentEvent): F[Unit] =
     if (commentEvent.action == "created") {
       handleNewComment(commentEvent)
     } else {
-      IO.unit
+      Sync[F].unit
     }
 
 
-  def handleNewComment(commentEvent: IssueCommentEvent): IO[Unit] = {
+  def handleNewComment(commentEvent: IssueCommentEvent): F[Unit] = {
     val foundLabel = githubService
       .listLabels(commentEvent.repository, commentEvent.issue)
       .map(_.find(_.name === NoLabel.value))
@@ -90,7 +94,7 @@ class WebhookService(sheetsService: GSheetsService, githubService: GithubService
 
         (addLabel, removeLabel, comment).parMapN((_, _, _) => ())
       }
-      .getOrElseF(IO.unit)
+      .getOrElseF(Sync[F].unit)
   }
 
 }
