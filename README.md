@@ -15,7 +15,6 @@ An example configuration is shown here:
 port = 8080
 
 github.token    = 1234567890abcdefghijk
-github.bot-name = "snowplow-cla-bot"
 
 gsheets.client-id      = foobar.apps.googleusercontent.com
 gsheets.client-secret  = YOUR_GSHEETS_SECRET

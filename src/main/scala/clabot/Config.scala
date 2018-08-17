@@ -4,7 +4,7 @@ import gsheets4s.model.Credentials
 
 object Config {
 
-  final case class GithubConfig(token: String, botName: String)
+  final case class GithubConfig(token: String)
 
   final case class GSheetsConfig(
     accessToken: String,
