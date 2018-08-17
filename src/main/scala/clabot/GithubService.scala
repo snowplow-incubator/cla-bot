@@ -1,7 +1,7 @@
 package clabot
 
 import cats.implicits._
-import cats.effect.IO
+import cats.effect.Sync
 
 import github4s.Github
 import github4s.Github._
@@ -13,43 +13,43 @@ import scalaj.http.HttpResponse
 
 import model._
 
-class GithubService(token: String) {
+class GithubService[F[_]: Sync](token: String) {
 
   import GithubService._
 
   val gh = Github(Some(token))
 
-  private def extractResult[A](response: GHResponse[A]): IO[A] =
-    IO.fromEither(response.map(_.result))
+  private def extractResult[A](response: GHResponse[A]): F[A] =
+    Sync[F].fromEither(response.map(_.result))
 
 
-  def listLabels(repo: Repository, issue: Issue): IO[List[Label]] =
+  def listLabels(repo: Repository, issue: Issue): F[List[Label]] =
     gh.issues.listLabels(repo.owner.login, repo.name, issue.number)
-      .exec[IO, HttpResponse[String]]()
+      .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
 
 
-  def addLabel(repo: Repository, issue: Issue, label: ClaLabel): IO[List[Label]] =
+  def addLabel(repo: Repository, issue: Issue, label: ClaLabel): F[List[Label]] =
     gh.issues.addLabels(repo.owner.login, repo.name, issue.number, List(label.value))
-      .exec[IO, HttpResponse[String]]()
+      .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
 
 
-  def removeNoLabel(repo: Repository, issue: Issue): IO[List[Label]] =
+  def removeNoLabel(repo: Repository, issue: Issue): F[List[Label]] =
     gh.issues.removeLabel(repo.owner.login, repo.name, issue.number, NoLabel.value)
-      .exec[IO, HttpResponse[String]]()
+      .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
 
 
-  def postComment(repo: Repository, issue: Issue, text: String): IO[Comment] =
+  def postComment(repo: Repository, issue: Issue, text: String): F[Comment] =
     gh.issues.createComment(repo.owner.login, repo.name, issue.number, text)
-      .exec[IO, HttpResponse[String]]()
+      .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
 
 
-  def findMember(organization: Organization, user: User): IO[Option[String]] =
+  def findMember(organization: Organization, user: User): F[Option[String]] =
     gh.organizations.listMembers(organization.login)
-      .exec[IO, HttpResponse[String]]()
+      .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
       .map(users => users.map(_.login).find(_ === user.login))
 

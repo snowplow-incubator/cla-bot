@@ -11,28 +11,26 @@ import eu.timepit.refined.api.RefType
 import gsheets4s._
 import gsheets4s.model._
 
-class GSheetsService(credentials: Credentials, spreadsheetId: String, sheetName: String, column: String) {
-  private implicit val interpreter = hammock.jvm.Interpreter[IO]
+class GSheetsService[F[_]: Sync](credentials: Ref[F, Credentials], spreadsheetId: String, sheetName: String, column: String) {
+  private implicit val interpreter = hammock.jvm.Interpreter[F]
 
-
-  def findLogin(login: String): IO[Option[String]] =
+  def findLogin(login: String): F[Option[String]] =
     getAll.map(logins => logins.find(_ === login))
 
+  private val colPosition: Either[String, ColPosition] =
+    RefType.applyRef[Col](column).map(ColPosition)
 
-  private val getAll: IO[List[String]] = {
+  private val getAll: F[List[String]] = {
     val program = for {
-      credsRef          <- EitherT.right(Ref.of[IO, Credentials](credentials))
-      col               <- EitherT.fromEither[IO](colPosition)
-      spreadsheetValues =  GSheets4s[IO](credsRef).spreadsheetsValues
+      col               <- EitherT.fromEither[F](colPosition)
+      spreadsheetValues =  GSheets4s[F](credentials).spreadsheetsValues
       range             =  SheetNameRangeNotation(sheetName, Range(col, col))
       valueRange        <- EitherT(spreadsheetValues.get(spreadsheetId, range)).leftMap(_.toString)
     } yield valueRange.values.flatten
 
-    program.value.map(either => either.leftMap(str => new RuntimeException(str))).flatMap(IO.fromEither)
+    program.value.map(either => either.leftMap(str => new RuntimeException(str))).flatMap(Sync[F].fromEither)
   }
 
 
-  private val colPosition: Either[String, ColPosition] =
-    RefType.applyRef[Col](column).map(ColPosition)
 
 }
