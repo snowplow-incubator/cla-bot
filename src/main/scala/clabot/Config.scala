@@ -2,10 +2,11 @@ package clabot
 
 import gsheets4s.model.Credentials
 
-object config {
-  case class GithubConfig(token: String, org: String, botName: String)
-  case class AwsConfig(sqsQueueUrl: String)
-  case class GSheetsConfig(
+object Config {
+
+  final case class GithubConfig(token: String, botName: String)
+
+  final case class GSheetsConfig(
     accessToken: String,
     refreshToken: String,
     clientId: String,
@@ -16,9 +17,10 @@ object config {
   ) {
     def toCredentials: Credentials = Credentials(accessToken, refreshToken, clientId, clientSecret)
   }
-  case class ClaBotConfig(
+
+  final case class ClaBotConfig(
+    port: Int,
     github: GithubConfig,
-    aws: AwsConfig,
     gsheets: GSheetsConfig
   )
 }
