@@ -1,8 +1,9 @@
 package clabot
 
 import cats.temp.par._
-import cats.data.OptionT
+import cats._
 import cats.implicits._
+import cats.data.OptionT
 import cats.effect._
 
 import org.http4s._
@@ -45,7 +46,6 @@ class WebhookService[F[_]: Sync : Par](sheetsService: GSheetsService[F], githubS
       }
   }
 
-
   def handlePullRequest(prEvent: PullRequestEvent): F[Unit] =
     if (prEvent.action === "opened") {
       handleNewPullRequest(prEvent)
@@ -53,24 +53,22 @@ class WebhookService[F[_]: Sync : Par](sheetsService: GSheetsService[F], githubS
       Sync[F].unit
     }
 
-
   def handleNewPullRequest(prEvent: PullRequestEvent): F[Unit] =
-    OptionT(sheetsService.findLogin(prEvent.sender.login))
-      .semiflatMap(_ => githubService.addLabel(prEvent.repository, Issue(prEvent.number), YesLabel).map(_ => ()))
+    OptionT(githubService.findCollaborator(prEvent.repository, prEvent.sender))
+      .map(_ => ())
+      .orElse(handleNotCollaborator(prEvent))
       .getOrElseF(handleNoCla(prEvent))
 
+  def handleNotCollaborator(prEvent: PullRequestEvent): OptionT[F, Unit] =
+    OptionT(sheetsService.findLogin(prEvent.sender.login))
+      .semiflatMap(_ => githubService.addLabel(prEvent.repository, Issue(prEvent.number), YesLabel).map(_ => ()))
 
-  def handleNoCla(prEvent: PullRequestEvent): F[Unit] =
-    OptionT(Sync[F].pure(prEvent.organization))
-      .flatMapF(org => githubService.findMember(org, prEvent.sender))
-      .semiflatMap(_ => Sync[F].unit)
-      .getOrElseF {
-        val addLabel = githubService.addLabel(prEvent.repository, Issue(prEvent.number), NoLabel)
-        val comment  = githubService.postComment(prEvent.repository, Issue(prEvent.number), noMessage)
+  def handleNoCla(prEvent: PullRequestEvent): F[Unit] = {
+    val addLabel = githubService.addLabel(prEvent.repository, Issue(prEvent.number), NoLabel)
+    val comment  = githubService.postComment(prEvent.repository, Issue(prEvent.number), noMessage)
 
-        (addLabel, comment).parMapN((_, _) => ())
-      }
-
+    (addLabel, comment).parMapN((_, _) => ())
+  }
 
   def handleIssueComment(commentEvent: IssueCommentEvent): F[Unit] =
     if (commentEvent.action == "created") {
@@ -85,13 +83,13 @@ class WebhookService[F[_]: Sync : Par](sheetsService: GSheetsService[F], githubS
       .listLabels(commentEvent.repository, commentEvent.issue)
       .map(_.find(_.name === NoLabel.value))
 
-    OptionT(foundLabel)
-      .productR(OptionT.fromOption[F](commentEvent.issue.user))
+    OptionT.fromOption[F](commentEvent.issue.user.filter(user => user.login === commentEvent.sender.login))
+      .productL(OptionT(foundLabel))
       .flatMapF(user => sheetsService.findLogin(user.login))
-      .semiflatMap { _ =>
-        val addLabel = githubService.addLabel(commentEvent.repository, commentEvent.issue, YesLabel)
+      .semiflatMap { login =>
+        val addLabel    = githubService.addLabel(commentEvent.repository, commentEvent.issue, YesLabel)
         val removeLabel = githubService.removeNoLabel(commentEvent.repository, commentEvent.issue)
-        val comment = githubService.postComment(commentEvent.repository, commentEvent.issue, thanksMessage)
+        val comment     = githubService.postComment(commentEvent.repository, commentEvent.issue, thanksMessage(login))
 
         (addLabel, removeLabel, comment).parMapN((_, _, _) => ())
       }

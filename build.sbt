@@ -24,13 +24,13 @@ lazy val baseSettings = Seq(
     _.filterNot(Set("-Ywarn-unused-import"))
   },
   scalaVersion := "2.12.6",
-  version := "0.1.0-SNAPSHOT"
+  version := "0.1.0"
 )
 
 lazy val pureConfigVersion = "0.9.1"
 lazy val http4sVersion = "0.19.0-M1"
 lazy val catsParVersion = "0.2.0"
-lazy val github4sVersion = "0.18.6"
+lazy val github4sVersion = "0.18.7"
 lazy val gsheeets4sVersion = "0.1.0"
 lazy val scalajHttpVersion = "2.4.0"
 lazy val scalatestVersion = "3.0.5"

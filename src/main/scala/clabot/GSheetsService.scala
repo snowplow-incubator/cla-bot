@@ -20,23 +20,28 @@ trait GSheetsService[F[_]] {
 class GSheetsServiceImpl[F[_]: Sync](credentials: Ref[F, Credentials], spreadsheetId: String, sheetName: String, column: String)
   extends GSheetsService[F] {
 
-  private implicit val interpreter = hammock.jvm.Interpreter[F]
+  import GSheetsService._
 
   def findLogin(login: String): F[Option[String]] =
     getAll.map(logins => logins.find(_ === login))
 
-  private val colPosition: Either[String, ColPosition] =
-    RefType.applyRef[Col](column).map(ColPosition)
+  private val colPosition: Either[GSheetsException, ColPosition] =
+    RefType.applyRef[Col](column).map(ColPosition).leftMap(msg => GSheetsException(msg))
 
   private val getAll: F[List[String]] = {
     val program = for {
       col               <- EitherT.fromEither[F](colPosition)
       spreadsheetValues =  GSheets4s[F](credentials).spreadsheetsValues
       range             =  SheetNameRangeNotation(sheetName, Range(col, col))
-      valueRange        <- EitherT(spreadsheetValues.get(spreadsheetId, range)).leftMap(_.toString)
+      valueRange        <- EitherT(spreadsheetValues.get(spreadsheetId, range)).leftMap(e => GSheetsException(e.message))
     } yield valueRange.values.flatten
 
-    program.value.map(either => either.leftMap(str => new RuntimeException(str))).flatMap(Sync[F].fromEither)
+    program.value.flatMap(Sync[F].fromEither)
   }
+}
+
+object GSheetsService {
+
+  case class GSheetsException(msg: String) extends RuntimeException(msg)
 
 }

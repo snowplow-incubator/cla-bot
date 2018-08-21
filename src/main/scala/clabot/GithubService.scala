@@ -25,7 +25,7 @@ trait GithubService[F[_]] {
 
   def postComment(repo: Repository, issue: Issue, text: String): F[Comment]
 
-  def findMember(organization: Organization, user: User): F[Option[String]]
+  def findCollaborator(repo: Repository, user: User): F[Option[String]]
 
 }
 
@@ -38,45 +38,43 @@ class GithubServiceImpl[F[_]: Sync](token: String) extends GithubService[F] {
   private def extractResult[A](response: GHResponse[A]): F[A] =
     Sync[F].fromEither(response.map(_.result))
 
-
   def listLabels(repo: Repository, issue: Issue): F[List[Label]] =
     gh.issues.listLabels(repo.owner.login, repo.name, issue.number)
       .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
-
 
   def addLabel(repo: Repository, issue: Issue, label: ClaLabel): F[List[Label]] =
     gh.issues.addLabels(repo.owner.login, repo.name, issue.number, List(label.value))
       .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
 
-
   def removeNoLabel(repo: Repository, issue: Issue): F[List[Label]] =
     gh.issues.removeLabel(repo.owner.login, repo.name, issue.number, NoLabel.value)
       .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
-
 
   def postComment(repo: Repository, issue: Issue, text: String): F[Comment] =
     gh.issues.createComment(repo.owner.login, repo.name, issue.number, text)
       .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
 
-
-  def findMember(organization: Organization, user: User): F[Option[String]] =
-    gh.organizations.listMembers(organization.login)
+  def findCollaborator(repo: Repository, user: User): F[Option[String]] =
+    gh.repos.listCollaborators(repo.owner.login, repo.name)
       .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
       .map(users => users.map(_.login).find(_ === user.login))
-
 }
 
 object GithubService {
 
-  val noMessage = "Please sign the CLA: https://github.com/snowplow/snowplow/wiki/CLA.\n" +
-    "Once you signed it, comment on this PR to trigger the bot."
+  val noMessage = """Thanks for your pull request. Is this your first contribution to a Snowplow open source project? Before we can look at your pull request, you'll need to sign a Contributor License Agreement (CLA).
+                    |
+                    |:memo: Please visit https://github.com/snowplow/snowplow/wiki/CLA to learn more and sign.
+                    |
+                    |Once you've signed, please reply here (e.g. I signed it!) and we'll verify. Thanks.
+                    |""".stripMargin
 
-  val thanksMessage = "Thank you for signing the CLA!"
+  def thanksMessage(login: String) = s"Confirmed! @$login has signed the Individual Contributor License Agreement. Thanks so much."
 
 
   sealed abstract class ClaLabel(val value: String)
