@@ -1,5 +1,6 @@
 # Snowplow CLA bot
 
+[![License][license-image]][license]
 [![Build Status](https://travis-ci.com/snowplow-incubator/cla-bot.svg?token=rA744zFX5YFUNdyp1U6x&branch=master)](https://travis-ci.com/snowplow-incubator/cla-bot)
 
 Snowplow CLA bot is a web server which handles GitHub webhook events to check whether
@@ -72,6 +73,22 @@ java -Dconfig.file=application.conf \
   Otherwise it ignores the comment.
 
 
+## Copyright and license
+
+The Snowplow Scala Tracker is copyright 2015-2018 Snowplow Analytics Ltd.
+
+Licensed under the **[Apache License, Version 2.0][license]** (the "License");
+you may not use this software except in compliance with the License.
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+
+[license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
+[license]: http://www.apache.org/licenses/LICENSE-2.0
 
 [webhooks]: https://developer.github.com/webhooks/
 [log4j]: https://docs.oracle.com/cd/E29578_01/webhelp/cas_webcrawler/src/cwcg_config_log4j_file.html
