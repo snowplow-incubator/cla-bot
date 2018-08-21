@@ -29,15 +29,15 @@ object Server extends StreamApp[IO] {
   def getSheetsService[F[_]: Sync](config: ClaBotConfig): F[GSheetsService[F]] =
     Ref.of[F, Credentials](config.gsheets.toCredentials)
       .map(credentialsRef =>
-        new GSheetsService[F](credentialsRef,
-                              config.gsheets.spreadsheetId,
-                              config.gsheets.sheetName,
-                              config.gsheets.column)
+        new GSheetsServiceImpl[F](credentialsRef,
+                                  config.gsheets.spreadsheetId,
+                                  config.gsheets.sheetName,
+                                  config.gsheets.column)
       )
 
 
   def getGithubService[F[_]: Sync](config: ClaBotConfig): GithubService[F] =
-    new GithubService[F](config.github.token)
+    new GithubServiceImpl[F](config.github.token)
 
 
   override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] =
