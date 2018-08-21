@@ -37,7 +37,7 @@ object model {
   )
 
 
-  @JsonCodec final case class Issue(number: Int)
+  @JsonCodec final case class Issue(number: Int, user: Option[User] = None)
   @JsonCodec final case class Organization(login: String)
   @JsonCodec final case class Repository(name: String, owner: User)
   @JsonCodec final case class User(login: String) // shared between `sender` and `owner` fields

@@ -86,7 +86,8 @@ class WebhookService[F[_]: Sync : Par](sheetsService: GSheetsService[F], githubS
       .map(_.find(_.name === NoLabel.value))
 
     OptionT(foundLabel)
-      .flatMapF(_ => sheetsService.findLogin(commentEvent.sender.login))
+      .productR(OptionT.fromOption[F](commentEvent.issue.user))
+      .flatMapF(user => sheetsService.findLogin(user.login))
       .semiflatMap { _ =>
         val addLabel = githubService.addLabel(commentEvent.repository, commentEvent.issue, YesLabel)
         val removeLabel = githubService.removeNoLabel(commentEvent.repository, commentEvent.issue)

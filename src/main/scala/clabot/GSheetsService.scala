@@ -11,7 +11,15 @@ import eu.timepit.refined.api.RefType
 import gsheets4s._
 import gsheets4s.model._
 
-class GSheetsService[F[_]: Sync](credentials: Ref[F, Credentials], spreadsheetId: String, sheetName: String, column: String) {
+trait GSheetsService[F[_]] {
+
+  def findLogin(login: String): F[Option[String]]
+
+}
+
+class GSheetsServiceImpl[F[_]: Sync](credentials: Ref[F, Credentials], spreadsheetId: String, sheetName: String, column: String)
+  extends GSheetsService[F] {
+
   private implicit val interpreter = hammock.jvm.Interpreter[F]
 
   def findLogin(login: String): F[Option[String]] =
@@ -30,7 +38,5 @@ class GSheetsService[F[_]: Sync](credentials: Ref[F, Credentials], spreadsheetId
 
     program.value.map(either => either.leftMap(str => new RuntimeException(str))).flatMap(Sync[F].fromEither)
   }
-
-
 
 }

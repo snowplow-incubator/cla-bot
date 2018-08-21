@@ -31,10 +31,10 @@ lazy val pureConfigVersion = "0.9.1"
 lazy val http4sVersion = "0.19.0-M1"
 lazy val catsParVersion = "0.2.0"
 lazy val github4sVersion = "0.18.6"
-lazy val gsheeets4sVersion = "0.1.0-SNAPSHOT"
+lazy val gsheeets4sVersion = "0.1.0"
 lazy val scalajHttpVersion = "2.4.0"
 lazy val scalatestVersion = "3.0.5"
-lazy val mockitoVersion = "2.17.0"
+lazy val mockitoVersion = "0.3.0"
 
 lazy val claBot = project.in(file("."))
   .settings(
@@ -57,7 +57,7 @@ lazy val claBot = project.in(file("."))
 
       "com.github.benfradet" %% "gsheets4s" % gsheeets4sVersion,
 
-      "org.scalatest" %% "scalatest"    % scalatestVersion % "test",
-      "org.mockito"   %  "mockito-core" % mockitoVersion   % "test"
+      "org.scalatest" %% "scalatest"     % scalatestVersion % "test",
+      "org.mockito"   %% "mockito-scala" % mockitoVersion   % "test"
     )
   )

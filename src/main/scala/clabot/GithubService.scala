@@ -13,7 +13,23 @@ import scalaj.http.HttpResponse
 
 import model._
 
-class GithubService[F[_]: Sync](token: String) {
+trait GithubService[F[_]] {
+
+  import GithubService._
+
+  def listLabels(repo: Repository, issue: Issue): F[List[Label]]
+
+  def addLabel(repo: Repository, issue: Issue, label: ClaLabel): F[List[Label]]
+
+  def removeNoLabel(repo: Repository, issue: Issue): F[List[Label]]
+
+  def postComment(repo: Repository, issue: Issue, text: String): F[Comment]
+
+  def findMember(organization: Organization, user: User): F[Option[String]]
+
+}
+
+class GithubServiceImpl[F[_]: Sync](token: String) extends GithubService[F] {
 
   import GithubService._
 
