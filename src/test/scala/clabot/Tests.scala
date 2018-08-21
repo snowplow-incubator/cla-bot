@@ -38,9 +38,9 @@ class GithubServiceTestImpl extends GithubService[IO] {
   override def postComment(repo: model.Repository, issue: model.Issue, text: String): IO[Comment] =
     IO.pure(Comment(0, "foo", "foo", "foo", None, "foo", "foo"))
 
-  override def findMember(organization: model.Organization, user: model.User): IO[Option[String]] =
-    if(user.login === "userMember")
-      IO.pure(Some("userMember"))
+  override def findCollaborator(organization: model.Repository, user: model.User): IO[Option[String]] =
+    if(user.login === "userCollaborator")
+      IO.pure(Some("userCollaborator"))
     else
       IO.pure(None)
 }
@@ -51,7 +51,7 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
   private def prEventRequest(login: String) = {
     val prHeaders = Headers(Header("X-GitHub-Event", "pull_request"))
-    val body      = Stream.emits(PullRequestEvent("opened", 1, sampleRepo, User(login), None).asJson.noSpaces.getBytes)
+    val body      = Stream.emits(PullRequestEvent("opened", 1, sampleRepo, User(login)).asJson.noSpaces.getBytes)
 
     Request[IO](method = Method.POST, uri = Uri.uri("/webhook"),
                 headers = prHeaders, body = body)
@@ -72,6 +72,7 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
     endpoints(prEventRequest("userWithNoCla")).unsafeRunSync()
 
+    gsheetsMock wasCalled onceOn findLogin(*)
     githubMock wasCalled onceOn addLabel(*, *, eqTo(NoLabel))
     githubMock wasCalled onceOn postComment(*, *, *)
   }
@@ -83,7 +84,21 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
     endpoints(prEventRequest("userWithCla")).unsafeRunSync()
 
+    gsheetsMock wasCalled onceOn findLogin(*)
     githubMock wasCalled onceOn addLabel(*, *, eqTo(YesLabel))
+    githubMock was never called on postComment(*, *, *)
+  }
+
+  it should "not do anything if user is a collaborator" in {
+
+    val gsheetsMock = spy(new GsheetsServiceTestImpl)
+    val githubMock  = spy(new GithubServiceTestImpl)
+    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).endpoints.orNotFound
+
+    endpoints(prEventRequest("userCollaborator")).unsafeRunSync()
+
+    gsheetsMock was never called on findLogin(*)
+    githubMock was never called on addLabel(*, *, *)
     githubMock was never called on postComment(*, *, *)
   }
 

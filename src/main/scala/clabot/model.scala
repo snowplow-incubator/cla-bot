@@ -10,14 +10,12 @@ object model {
    * @param number of the pull request
    * @param repository data about the repository
    * @param sender data about the creator of the PR
-   * @param organization data about the organization the repository is in, available only when there is an organization
    */
   @JsonCodec final case class PullRequestEvent(
     action: String,
     number: Int,
     repository: Repository,
     sender: User,
-    organization: Option[Organization]
   )
 
 
@@ -38,7 +36,6 @@ object model {
 
 
   @JsonCodec final case class Issue(number: Int, user: Option[User] = None)
-  @JsonCodec final case class Organization(login: String)
   @JsonCodec final case class Repository(name: String, owner: User)
   @JsonCodec final case class User(login: String) // shared between `sender` and `owner` fields
 }

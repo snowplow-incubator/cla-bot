@@ -18,6 +18,12 @@ import clabot.Config.ClaBotConfig
 
 object Server extends StreamApp[IO] {
 
+  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] =
+    ServerStream.stream[IO]
+}
+
+object ServerStream {
+
   def getConfig[F[_]: Sync]: F[ClaBotConfig] = {
     val configEither = pureconfig.loadConfig[ClaBotConfig]
       .leftMap(failures => new RuntimeException(failures.toList.map(_.description).mkString("\n  * ")))
@@ -25,26 +31,19 @@ object Server extends StreamApp[IO] {
     Sync[F].fromEither(configEither)
   }
 
-
   def getSheetsService[F[_]: Sync](config: ClaBotConfig): F[GSheetsService[F]] =
     Ref.of[F, Credentials](config.gsheets.toCredentials)
       .map(credentialsRef =>
         new GSheetsServiceImpl[F](credentialsRef,
-                                  config.gsheets.spreadsheetId,
-                                  config.gsheets.sheetName,
-                                  config.gsheets.column)
+          config.gsheets.spreadsheetId,
+          config.gsheets.sheetName,
+          config.gsheets.column)
       )
-
 
   def getGithubService[F[_]: Sync](config: ClaBotConfig): GithubService[F] =
     new GithubServiceImpl[F](config.github.token)
 
-
-  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] =
-    streamF[IO]
-
-
-  def streamF[F[_]: ConcurrentEffect : Par]: Stream[F, ExitCode] =
+  def stream[F[_]: ConcurrentEffect : Par]: Stream[F, ExitCode] =
     for {
       config         <- Stream.eval(getConfig[F])
       sheetService   <- Stream.eval(getSheetsService[F](config))
