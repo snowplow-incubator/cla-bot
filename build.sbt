@@ -10,7 +10,8 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-organization in ThisBuild := "com.snowplowanalytics"
+
+import com.typesafe.sbt.packager.docker._
 
 lazy val compilerOptions = Seq(
   "-deprecation",
@@ -35,8 +36,16 @@ lazy val baseSettings = Seq(
   scalacOptions in (Test, console) ~= {
     _.filterNot(Set("-Ywarn-unused-import"))
   },
+  organization := "com.snowplowanalytics",
   scalaVersion := "2.12.6",
-  version := "0.1.0"
+  version := "0.1.0",
+  name := "cla-bot",
+  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+)
+
+lazy val dockerSettings = Seq(
+  dockerBaseImage := "openjdk:8u171-jre-alpine",
+  dockerExposedPorts := Seq(8080)
 )
 
 lazy val pureConfigVersion = "0.9.1"
@@ -49,11 +58,9 @@ lazy val scalatestVersion = "3.0.5"
 lazy val mockitoVersion = "0.3.0"
 
 lazy val claBot = project.in(file("."))
-  .settings(
-    name := "cla-bot",
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-  )
+  .enablePlugins(JavaServerAppPackaging)
   .settings(baseSettings)
+  .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
       "com.github.pureconfig" %% "pureconfig" % pureConfigVersion,

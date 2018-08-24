@@ -46,7 +46,13 @@ gsheets {
 
 ### Running
 
-You just need to run:
+You can run the project using Docker, through a helper script:
+```bash
+sbt docker:publishLocal
+sh target/docker/stage/opt/docker/bin/cla-bot -Dconfig.fle=application.conf
+```
+
+Or run the jar directly:
 
 ```bash
 sbt assembly
