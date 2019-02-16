@@ -21,7 +21,7 @@ lazy val baseSettings = Seq(
     _.filterNot(Set("-Ywarn-unused-import"))
   },
   organization := "com.snowplowanalytics",
-  scalaVersion := "2.12.6",
+  scalaVersion := "2.12.8",
   version := "0.1.0",
   name := "cla-bot",
   addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
