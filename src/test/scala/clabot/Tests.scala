@@ -13,7 +13,6 @@
 package clabot
 
 import concurrent.ExecutionContext.Implicits.global
-import cats._
 import cats.implicits._
 import cats.effect.IO
 import clabot.GithubService.{NoLabel, YesLabel}
@@ -84,9 +83,17 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
     endpoints(prEventRequest("userWithNoCla")).unsafeRunSync()
 
-    gsheetsMock wasCalled onceOn findLogin(*)
-    githubMock wasCalled onceOn addLabel(*, *, eqTo(NoLabel))
-    githubMock wasCalled onceOn postComment(*, *, *)
+    gsheetsMock wasCalled onceOn findLogin(eqTo("userWithNoCla"))
+    githubMock wasCalled onceOn addLabel(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1, None)),
+      eqTo(NoLabel)
+    )
+    githubMock wasCalled onceOn postComment(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1, None)),
+      eqTo(GithubService.noMessage)
+    )
   }
 
   it should "add a label but not comment if user has signed CLA" in {
@@ -96,9 +103,17 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
     endpoints(prEventRequest("userWithCla")).unsafeRunSync()
 
-    gsheetsMock wasCalled onceOn findLogin(*)
-    githubMock wasCalled onceOn addLabel(*, *, eqTo(YesLabel))
-    githubMock was never called on postComment(*, *, *)
+    gsheetsMock wasCalled onceOn findLogin(eqTo("userWithCla"))
+    githubMock wasCalled onceOn addLabel(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1)),
+      eqTo(YesLabel)
+    )
+    githubMock was never called on postComment(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1)),
+      eqTo("")
+    )
   }
 
   it should "not do anything if user is a collaborator" in {
@@ -109,9 +124,17 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
     endpoints(prEventRequest("userCollaborator")).unsafeRunSync()
 
-    gsheetsMock was never called on findLogin(*)
-    githubMock was never called on addLabel(*, *, *)
-    githubMock was never called on postComment(*, *, *)
+    gsheetsMock was never called on findLogin(eqTo("userCollaborator"))
+    githubMock was never called on addLabel(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1)),
+      eqTo(YesLabel)
+    )
+    githubMock was never called on postComment(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1)),
+      eqTo("")
+    )
   }
 
   it should "not do anything if pinged and there is no 'cla:no' label" in {
@@ -121,9 +144,17 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
     endpoints(commentEventRequest("userWithCla", 0)).unsafeRunSync()
 
-    gsheetsMock was never called on findLogin(*)
-    githubMock was never called on addLabel(*, *, *)
-    githubMock was never called on postComment(*, *, *)
+    gsheetsMock was never called on findLogin(eqTo("userWithCla"))
+    githubMock was never called on addLabel(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1)),
+      eqTo(YesLabel)
+    )
+    githubMock was never called on postComment(
+      eqTo(Repository("repoo", User("owner"))),
+      eqTo(Issue(1)),
+      eqTo("")
+    )
   }
 
   it should "not post a comment if pinged and there is a 'cla:no' label but user has not yet signed cla" in {
@@ -133,9 +164,17 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
     endpoints(commentEventRequest("userWithoutCla", 1)).unsafeRunSync()
 
-    gsheetsMock wasCalled onceOn findLogin(*)
-    githubMock was never called on addLabel(*, *, *)
-    githubMock was never called on postComment(*, *, *)
+    gsheetsMock wasCalled onceOn findLogin(eqTo("userWithoutCla"))
+    githubMock was never called on addLabel(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1)),
+      eqTo(YesLabel)
+    )
+    githubMock was never called on postComment(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1)),
+      eqTo("")
+    )
   }
 
   it should "post a comment if pinged, there is 'cla:no' label and user has signed the cla" in {
@@ -145,9 +184,17 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
     endpoints(commentEventRequest("userWithCla", 1)).unsafeRunSync()
 
-    gsheetsMock wasCalled onceOn findLogin(*)
-    githubMock wasCalled onceOn addLabel(*, *, eqTo(YesLabel))
-    githubMock wasCalled onceOn postComment(*, *, *)
+    gsheetsMock wasCalled onceOn findLogin(eqTo("userWithCla"))
+    githubMock wasCalled onceOn addLabel(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1, Some(User("userWithCla")))),
+      eqTo(YesLabel)
+    )
+    githubMock wasCalled onceOn postComment(
+      eqTo(Repository("repo", User("owner"))),
+      eqTo(Issue(1, Some(User("userWithCla")))),
+      eqTo(GithubService.thanksMessage("userWithCla"))
+    )
   }
 
 }

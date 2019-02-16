@@ -13,7 +13,6 @@
 package clabot
 
 import cats.temp.par._
-import cats._
 import cats.implicits._
 import cats.data.OptionT
 import cats.effect._
