@@ -36,7 +36,6 @@ lazy val http4sVersion = "0.20.0-M5"
 lazy val circeVersion = "0.11.1"
 lazy val github4sVersion = "0.20.0"
 lazy val gsheeets4sVersion = "0.1.0"
-lazy val scalajHttpVersion = "2.4.0"
 lazy val scalatestVersion = "3.0.5"
 lazy val mockitoVersion = "0.3.0"
 
@@ -55,7 +54,6 @@ lazy val claBot = project.in(file("."))
       "io.circe" %% "circe-generic" % circeVersion,
 
       "com.47deg"  %% "github4s-cats-effect" % github4sVersion,
-      "org.scalaj" %% "scalaj-http"          % scalajHttpVersion,
 
       "com.github.benfradet" %% "gsheets4s" % gsheeets4sVersion,
 
