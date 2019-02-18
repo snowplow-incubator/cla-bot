@@ -36,7 +36,7 @@ lazy val circeVersion = "0.11.1"
 lazy val circeConfigVersion = "0.6.1"
 lazy val github4sVersion = "0.20.0"
 lazy val gsheeets4sVersion = "0.1.0"
-lazy val scalatestVersion = "3.0.5"
+lazy val specs2Version = "4.3.4"
 lazy val mockitoVersion = "0.3.0"
 
 lazy val claBot = project.in(file("."))
@@ -45,14 +45,18 @@ lazy val claBot = project.in(file("."))
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-dsl"          % http4sVersion,
-      "org.http4s" %% "http4s-blaze-server" % http4sVersion,
-      "org.http4s" %% "http4s-circe"        % http4sVersion,
+      "org.http4s" %% "http4s-dsl",
+      "org.http4s" %% "http4s-blaze-server",
+      "org.http4s" %% "http4s-circe",
+    ).map(_ % http4sVersion) ++ Seq(
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-config" % circeConfigVersion,
-      "com.47deg"  %% "github4s-cats-effect" % github4sVersion,
+      "com.47deg" %% "github4s-cats-effect" % github4sVersion,
       "com.github.benfradet" %% "gsheets4s" % gsheeets4sVersion,
-      "org.scalatest" %% "scalatest"     % scalatestVersion % "test",
-      "org.mockito"   %% "mockito-scala" % mockitoVersion   % "test"
-    )
+    ) ++ (Seq(
+      "org.specs2" %% "specs2-core",
+      "org.specs2" %% "specs2-mock",
+    ).map(_ % specs2Version) ++ Seq(
+      "org.mockito" %% "mockito-scala" % mockitoVersion,
+    )).map(_ % "test")
   )
