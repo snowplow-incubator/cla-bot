@@ -53,10 +53,10 @@ object ServerStream {
       config         <- Stream.eval(getConfig[F])
       sheetService   <- Stream.eval(getSheetsService[F](config))
       githubService  =  getGithubService[F](config)
-      webhookService =  new WebhookService[F](sheetService, githubService)
+      webhookRoutes  =  new WebhookRoutes[F](sheetService, githubService)
       exitCode       <- BlazeServerBuilder[F]
         .bindHttp(config.port)
-        .withHttpApp(webhookService.routes.orNotFound)
+        .withHttpApp(webhookRoutes.routes.orNotFound)
         .serve
     } yield exitCode
 
