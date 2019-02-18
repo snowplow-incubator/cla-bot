@@ -31,9 +31,9 @@ lazy val dockerSettings = Seq(
   dockerExposedPorts := Seq(8080)
 )
 
-lazy val pureConfigVersion = "0.9.1"
 lazy val http4sVersion = "0.20.0-M5"
 lazy val circeVersion = "0.11.1"
+lazy val circeConfigVersion = "0.6.1"
 lazy val github4sVersion = "0.20.0"
 lazy val gsheeets4sVersion = "0.1.0"
 lazy val scalatestVersion = "3.0.5"
@@ -45,18 +45,13 @@ lazy val claBot = project.in(file("."))
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.pureconfig" %% "pureconfig" % pureConfigVersion,
-
       "org.http4s" %% "http4s-dsl"          % http4sVersion,
       "org.http4s" %% "http4s-blaze-server" % http4sVersion,
       "org.http4s" %% "http4s-circe"        % http4sVersion,
-
       "io.circe" %% "circe-generic" % circeVersion,
-
+      "io.circe" %% "circe-config" % circeConfigVersion,
       "com.47deg"  %% "github4s-cats-effect" % github4sVersion,
-
       "com.github.benfradet" %% "gsheets4s" % gsheeets4sVersion,
-
       "org.scalatest" %% "scalatest"     % scalatestVersion % "test",
       "org.mockito"   %% "mockito-scala" % mockitoVersion   % "test"
     )

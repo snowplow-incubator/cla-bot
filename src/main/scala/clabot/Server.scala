@@ -16,10 +16,13 @@ import cats.effect.{ExitCode, IOApp, Timer}
 import cats.effect.concurrent.Ref
 import cats.implicits._
 import cats.effect.{ConcurrentEffect, IO, Sync}
+import com.typesafe.config.ConfigFactory
 import fs2.Stream
+import gsheets4s.model.Credentials
+import io.circe.config.syntax._
+import io.circe.generic.auto._
 import org.http4s.implicits._
 import org.http4s.server.blaze._
-import gsheets4s.model.Credentials
 import clabot.Config.ClaBotConfig
 
 object Server extends IOApp {
@@ -30,12 +33,8 @@ object Server extends IOApp {
 
 object ServerStream {
 
-  def getConfig[F[_]: Sync]: F[ClaBotConfig] = {
-    val configEither = pureconfig.loadConfig[ClaBotConfig]
-      .leftMap(failures => new RuntimeException(failures.toList.map(_.description).mkString("\n  * ")))
-
-    Sync[F].fromEither(configEither)
-  }
+  def getConfig[F[_]: Sync]: F[ClaBotConfig] =
+    Sync[F].fromEither(ConfigFactory.load().as[ClaBotConfig])
 
   def getSheetsService[F[_]: Sync](config: ClaBotConfig): F[GSheetsService[F]] =
     Ref.of[F, Credentials](config.gsheets.toCredentials)
