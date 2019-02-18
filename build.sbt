@@ -32,7 +32,7 @@ lazy val dockerSettings = Seq(
 )
 
 lazy val pureConfigVersion = "0.9.1"
-lazy val http4sVersion = "0.19.0-M1"
+lazy val http4sVersion = "0.20.0-M5"
 lazy val circeVersion = "0.11.1"
 lazy val github4sVersion = "0.18.8"
 lazy val gsheeets4sVersion = "0.1.0"

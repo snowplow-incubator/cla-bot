@@ -12,44 +12,46 @@
  */
 package clabot
 
-import cats.temp.par._
 import cats.implicits._
 import cats.data.OptionT
 import cats.effect._
-
+import io.circe.generic.auto._
 import org.http4s._
+import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.util.CaseInsensitiveString
 
-import clabot.model.{Issue, IssueCommentEvent, PullRequestEvent}
-import clabot.GithubService._
+import model.{Issue, IssueCommentEvent, PullRequestEvent}
+import GithubService._
+import NonEmptyParallel1.nonEmptyParallelFromNonEmptyParallel1
 
+class WebhookService[F[_]: Sync: NonEmptyParallel1](
+  sheetsService: GSheetsService[F],
+  githubService: GithubService[F]
+) extends Http4sDsl[F] {
 
-class WebhookService[F[_]: Sync : Par](sheetsService: GSheetsService[F], githubService: GithubService[F])
-  extends Http4sDsl[F] {
-
-  import org.http4s.circe.CirceEntityDecoder._
-
-  val endpoints = HttpRoutes.of[F] {
+  def routes = HttpRoutes.of[F] {
     case req @ POST -> Root / "webhook" =>
       val eventType = req.headers
         .get(CaseInsensitiveString("X-GitHub-Event"))
         .map(_.value)
 
       eventType match {
-        case Some("pull_request")  => req.as[PullRequestEvent]
-                                        .flatMap(handlePullRequest)
-                                        .attempt.flatMap {
-                                          case Left(error) => InternalServerError(error.getMessage)
-                                          case Right(_) => Ok()
-                                        }
+        case Some("pull_request")  =>
+          req.as[PullRequestEvent]
+            .flatMap(handlePullRequest)
+            .attempt.flatMap {
+              case Left(error) => InternalServerError(error.getMessage)
+              case Right(_) => Ok()
+            }
 
-        case Some("issue_comment") => req.as[IssueCommentEvent]
-                                        .flatMap(handleIssueComment)
-                                        .attempt.flatMap {
-                                          case Left(error) => InternalServerError(error.getMessage)
-                                          case Right(_) => Ok()
-                                        }
+        case Some("issue_comment") =>
+          req.as[IssueCommentEvent]
+            .flatMap(handleIssueComment)
+            .attempt.flatMap {
+              case Left(error) => InternalServerError(error.getMessage)
+              case Right(_) => Ok()
+            }
 
         case Some("ping")          => Ok("pong")
         case Some(otherEventType)  => BadRequest(s"Unknown event type $otherEventType")
