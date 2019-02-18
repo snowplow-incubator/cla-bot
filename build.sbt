@@ -53,10 +53,8 @@ lazy val claBot = project.in(file("."))
       "io.circe" %% "circe-config" % circeConfigVersion,
       "com.47deg" %% "github4s-cats-effect" % github4sVersion,
       "com.github.benfradet" %% "gsheets4s" % gsheeets4sVersion,
-    ) ++ (Seq(
+    ) ++ Seq(
       "org.specs2" %% "specs2-core",
       "org.specs2" %% "specs2-mock",
-    ).map(_ % specs2Version) ++ Seq(
-      "org.mockito" %% "mockito-scala" % mockitoVersion,
-    )).map(_ % "test")
+    ).map(_ % specs2Version % "test")
   )
