@@ -25,7 +25,7 @@ import model.{Issue, IssueCommentEvent, PullRequestEvent}
 import GithubService._
 import NonEmptyParallel1.nonEmptyParallelFromNonEmptyParallel1
 
-class WebhookService[F[_]: Sync: NonEmptyParallel1](
+class WebhookRoutes[F[_]: Sync: NonEmptyParallel1](
   sheetsService: GSheetsService[F],
   githubService: GithubService[F]
 ) extends Http4sDsl[F] {
