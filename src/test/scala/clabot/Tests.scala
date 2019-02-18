@@ -12,19 +12,21 @@
  */
 package clabot
 
-import concurrent.ExecutionContext.Implicits.global
 import cats.implicits._
-import cats.effect.IO
-import clabot.GithubService.{NoLabel, YesLabel}
-import io.circe.syntax._
+import cats.effect.{ContextShift, IO}
 import github4s.free.domain.{Comment, Label}
 import fs2.Stream
+import io.circe.generic.auto._
+import io.circe.syntax._
 import org.http4s._
 import org.http4s.implicits._
+
 import org.mockito.{ArgumentMatchersSugar, IdiomaticMockito}
 import org.mockito.MockitoSugar.spy
 import org.scalatest._
-import clabot.model._
+
+import GithubService.{NoLabel, YesLabel}
+import model._
 
 class GsheetsServiceTestImpl extends GSheetsService[IO] {
 
@@ -57,6 +59,8 @@ class GithubServiceTestImpl extends GithubService[IO] {
 }
 
 class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
+  implicit val cs: ContextShift[IO] =
+    IO.contextShift(scala.concurrent.ExecutionContext.Implicits.global)
 
   val sampleRepo = Repository("repo", User("owner"))
 
@@ -79,7 +83,7 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
   "The service" should "add a label and comment on new pull request if user has not signed CLA" in {
     val gsheetsMock = spy(new GsheetsServiceTestImpl)
     val githubMock  = spy(new GithubServiceTestImpl)
-    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).endpoints.orNotFound
+    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).routes.orNotFound
 
     endpoints(prEventRequest("userWithNoCla")).unsafeRunSync()
 
@@ -99,7 +103,7 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
   it should "add a label but not comment if user has signed CLA" in {
     val gsheetsMock = spy(new GsheetsServiceTestImpl)
     val githubMock  = spy(new GithubServiceTestImpl)
-    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).endpoints.orNotFound
+    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).routes.orNotFound
 
     endpoints(prEventRequest("userWithCla")).unsafeRunSync()
 
@@ -120,7 +124,7 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
 
     val gsheetsMock = spy(new GsheetsServiceTestImpl)
     val githubMock  = spy(new GithubServiceTestImpl)
-    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).endpoints.orNotFound
+    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).routes.orNotFound
 
     endpoints(prEventRequest("userCollaborator")).unsafeRunSync()
 
@@ -140,7 +144,7 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
   it should "not do anything if pinged and there is no 'cla:no' label" in {
     val gsheetsMock = spy(new GsheetsServiceTestImpl)
     val githubMock  = spy(new GithubServiceTestImpl)
-    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).endpoints.orNotFound
+    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).routes.orNotFound
 
     endpoints(commentEventRequest("userWithCla", 0)).unsafeRunSync()
 
@@ -160,7 +164,7 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
   it should "not post a comment if pinged and there is a 'cla:no' label but user has not yet signed cla" in {
     val gsheetsMock = spy(new GsheetsServiceTestImpl)
     val githubMock  = spy(new GithubServiceTestImpl)
-    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).endpoints.orNotFound
+    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).routes.orNotFound
 
     endpoints(commentEventRequest("userWithoutCla", 1)).unsafeRunSync()
 
@@ -180,7 +184,7 @@ class Tests extends FlatSpec with IdiomaticMockito with ArgumentMatchersSugar {
   it should "post a comment if pinged, there is 'cla:no' label and user has signed the cla" in {
     val gsheetsMock = spy(new GsheetsServiceTestImpl)
     val githubMock  = spy(new GithubServiceTestImpl)
-    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).endpoints.orNotFound
+    val endpoints = new WebhookService[IO](gsheetsMock, githubMock).routes.orNotFound
 
     endpoints(commentEventRequest("userWithCla", 1)).unsafeRunSync()
 

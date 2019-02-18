@@ -12,26 +12,20 @@
  */
 package clabot
 
-import concurrent.ExecutionContext.Implicits.global
-
+import cats.effect.{ExitCode, IOApp, Timer}
 import cats.effect.concurrent.Ref
-import cats.temp.par._
 import cats.implicits._
 import cats.effect.{ConcurrentEffect, IO, Sync}
-
-import fs2.{Stream, StreamApp}
-import fs2.StreamApp.ExitCode
-
+import fs2.Stream
+import org.http4s.implicits._
 import org.http4s.server.blaze._
-
 import gsheets4s.model.Credentials
-
 import clabot.Config.ClaBotConfig
 
-object Server extends StreamApp[IO] {
+object Server extends IOApp {
 
-  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] =
-    ServerStream.stream[IO]
+  override def run(args: List[String]): IO[ExitCode] =
+    ServerStream.stream[IO].compile.lastOrError
 }
 
 object ServerStream {
@@ -55,16 +49,15 @@ object ServerStream {
   def getGithubService[F[_]: Sync](config: ClaBotConfig): GithubService[F] =
     new GithubServiceImpl[F](config.github.token)
 
-  def stream[F[_]: ConcurrentEffect : Par]: Stream[F, ExitCode] =
+  def stream[F[_]: ConcurrentEffect: NonEmptyParallel1: Timer]: Stream[F, ExitCode] =
     for {
       config         <- Stream.eval(getConfig[F])
       sheetService   <- Stream.eval(getSheetsService[F](config))
       githubService  =  getGithubService[F](config)
       webhookService =  new WebhookService[F](sheetService, githubService)
-
-      exitCode       <- BlazeBuilder[F]
+      exitCode       <- BlazeServerBuilder[F]
         .bindHttp(config.port)
-        .mountService(webhookService.endpoints)
+        .withHttpApp(webhookService.routes.orNotFound)
         .serve
     } yield exitCode
 
