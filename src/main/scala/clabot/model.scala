@@ -12,8 +12,6 @@
  */
 package clabot
 
-import io.circe.generic.JsonCodec
-
 object model {
 
   /**
@@ -23,7 +21,7 @@ object model {
    * @param repository data about the repository
    * @param sender data about the creator of the PR
    */
-  @JsonCodec final case class PullRequestEvent(
+  final case class PullRequestEvent(
     action: String,
     number: Int,
     repository: Repository,
@@ -39,7 +37,7 @@ object model {
     * @param repository data about the repository
     * @param sender data about the commenter
     */
-  @JsonCodec final case class IssueCommentEvent(
+  final case class IssueCommentEvent(
     action: String,
     issue: Issue,
     repository: Repository,
@@ -47,7 +45,7 @@ object model {
   )
 
 
-  @JsonCodec final case class Issue(number: Int, user: Option[User] = None)
-  @JsonCodec final case class Repository(name: String, owner: User)
-  @JsonCodec final case class User(login: String) // shared between `sender` and `owner` fields
+  final case class Issue(number: Int, user: Option[User] = None)
+  final case class Repository(name: String, owner: User)
+  final case class User(login: String) // shared between `sender` and `owner` fields
 }
