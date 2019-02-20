@@ -32,6 +32,7 @@ object Config {
 
   final case class ClaBotConfig(
     port: Int,
+    host: String,
     github: GithubConfig,
     gsheets: GSheetsConfig
   )
