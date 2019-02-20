@@ -1,7 +1,7 @@
 # Snowplow CLA bot
 
 [![License][license-image]][license]
-[![Build Status](https://travis-ci.com/snowplow-incubator/cla-bot.svg?branch=master)](https://travis-ci.com/snowplow-incubator/cla-bot)
+[![Build Status](https://travis-ci.org/snowplow-incubator/cla-bot.svg?branch=master)](https://travis-ci.org/snowplow-incubator/cla-bot)
 
 Snowplow CLA bot is a web server which handles GitHub webhook events to check whether
 PR authors have signed the CLA. It uses Google Sheets as a data source.
