@@ -21,13 +21,15 @@ import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.util.CaseInsensitiveString
 
-import model.{Issue, IssueCommentEvent, PullRequestEvent}
+import config.CLAConfig
 import GithubService._
+import model.{Issue, IssueCommentEvent, PullRequestEvent}
 import NonEmptyParallel1.nonEmptyParallelFromNonEmptyParallel1
 
 class WebhookRoutes[F[_]: Sync: NonEmptyParallel1](
   sheetsService: GSheetsService[F],
-  githubService: GithubService[F]
+  githubService: GithubService[F],
+  claConfig: CLAConfig
 ) extends Http4sDsl[F] {
 
   def routes = HttpRoutes.of[F] {
@@ -39,7 +41,7 @@ class WebhookRoutes[F[_]: Sync: NonEmptyParallel1](
       eventType match {
         case Some("pull_request")  =>
           req.as[PullRequestEvent]
-            .flatMap(handlePullRequest)
+            .flatMap(handlePullRequest(_, claConfig.peopleToIgnore))
             .attempt.flatMap {
               case Left(error) => InternalServerError(error.getMessage)
               case Right(_) => Ok()
@@ -59,22 +61,27 @@ class WebhookRoutes[F[_]: Sync: NonEmptyParallel1](
       }
   }
 
-  def handlePullRequest(prEvent: PullRequestEvent): F[Unit] =
+  def handlePullRequest(prEvent: PullRequestEvent, peopleToIgnore: List[String]): F[Unit] =
     if (prEvent.action === "opened") {
-      handleNewPullRequest(prEvent)
+      handleNewPullRequest(prEvent, peopleToIgnore)
     } else {
       Sync[F].unit
     }
 
-  def handleNewPullRequest(prEvent: PullRequestEvent): F[Unit] =
-    OptionT(githubService.findCollaborator(prEvent.repository, prEvent.sender))
-      .map(_ => ())
-      .orElse(handleNotCollaborator(prEvent))
-      .getOrElseF(handleNoCla(prEvent))
+  def handleNewPullRequest(prEvent: PullRequestEvent, peopleToIgnore: List[String]): F[Unit] =
+    if (peopleToIgnore.contains(prEvent.sender)) {
+      Sync[F].unit
+    } else {
+      OptionT(githubService.findCollaborator(prEvent.repository, prEvent.sender))
+        .map(_ => ())
+        .orElse(handleNotCollaborator(prEvent))
+        .getOrElseF(handleNoCla(prEvent))
+    }
 
   def handleNotCollaborator(prEvent: PullRequestEvent): OptionT[F, Unit] =
     OptionT(sheetsService.findLogin(prEvent.sender.login))
-      .semiflatMap(_ => githubService.addLabel(prEvent.repository, Issue(prEvent.number), YesLabel).map(_ => ()))
+      .semiflatMap(_ => githubService.addLabel(prEvent.repository, Issue(prEvent.number), YesLabel)
+      .map(_ => ()))
 
   def handleNoCla(prEvent: PullRequestEvent): F[Unit] = {
     val addLabel = githubService.addLabel(prEvent.repository, Issue(prEvent.number), NoLabel)
