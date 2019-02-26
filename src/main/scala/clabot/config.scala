@@ -14,26 +14,40 @@ package clabot
 
 import gsheets4s.model.Credentials
 
-object Config {
+object config {
 
   final case class GithubConfig(token: String)
+
+  sealed trait GoogleSheet {
+    def spreadsheetId: String
+    def sheetName: String
+  }
+
+  final case class IndividualCLAConfig(
+    override val spreadsheetId: String,
+    override val sheetName: String,
+    column: String
+  ) extends GoogleSheet
+
+  final case class CLAConfig(
+    individualCLA: IndividualCLAConfig,
+    peopleToIgnore: List[String]
+  )
 
   final case class GSheetsConfig(
     accessToken: String,
     refreshToken: String,
     clientId: String,
-    clientSecret: String,
-    spreadsheetId: String,
-    sheetName: String,
-    column: String
+    clientSecret: String
   ) {
     def toCredentials: Credentials = Credentials(accessToken, refreshToken, clientId, clientSecret)
   }
 
-  final case class ClaBotConfig(
+  final case class CLABotConfig(
     port: Int,
     host: String,
     github: GithubConfig,
-    gsheets: GSheetsConfig
+    gsheets: GSheetsConfig,
+    cla: CLAConfig
   )
 }

@@ -23,7 +23,7 @@ import io.circe.config.syntax._
 import io.circe.generic.auto._
 import org.http4s.implicits._
 import org.http4s.server.blaze._
-import clabot.Config.ClaBotConfig
+import clabot.config._
 
 object Server extends IOApp {
 
@@ -33,27 +33,30 @@ object Server extends IOApp {
 
 object ServerStream {
 
-  def getConfig[F[_]: Sync]: F[ClaBotConfig] =
-    Sync[F].fromEither(ConfigFactory.load().as[ClaBotConfig])
+  def getConfig[F[_]: Sync]: F[CLABotConfig] =
+    Sync[F].fromEither(ConfigFactory.load().as[CLABotConfig])
 
-  def getSheetsService[F[_]: Sync](config: ClaBotConfig): F[GSheetsService[F]] =
-    Ref.of[F, Credentials](config.gsheets.toCredentials)
+  def getSheetsService[F[_]: Sync](
+    config: GSheetsConfig,
+    claConfig: IndividualCLAConfig
+  ): F[GSheetsService[F]] =
+    Ref.of[F, Credentials](config.toCredentials)
       .map(credentialsRef =>
         new GSheetsServiceImpl[F](credentialsRef,
-          config.gsheets.spreadsheetId,
-          config.gsheets.sheetName,
-          config.gsheets.column)
+          claConfig.spreadsheetId,
+          claConfig.sheetName,
+          claConfig.column)
       )
 
-  def getGithubService[F[_]: Sync](config: ClaBotConfig): GithubService[F] =
-    new GithubServiceImpl[F](config.github.token)
+  def getGithubService[F[_]: Sync](token: String): GithubService[F] =
+    new GithubServiceImpl[F](token)
 
   def stream[F[_]: ConcurrentEffect: NonEmptyParallel1: Timer]: Stream[F, ExitCode] =
     for {
       config         <- Stream.eval(getConfig[F])
-      sheetService   <- Stream.eval(getSheetsService[F](config))
-      githubService  =  getGithubService[F](config)
-      webhookRoutes  =  new WebhookRoutes[F](sheetService, githubService)
+      sheetService   <- Stream.eval(getSheetsService[F](config.gsheets, config.cla.individualCLA))
+      githubService  =  getGithubService[F](config.github.token)
+      webhookRoutes  =  new WebhookRoutes[F](sheetService, githubService, config.cla)
       exitCode       <- BlazeServerBuilder[F]
         .bindHttp(config.port, config.host)
         .withHttpApp(webhookRoutes.routes.orNotFound)

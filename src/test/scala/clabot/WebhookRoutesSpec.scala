@@ -24,6 +24,7 @@ import org.http4s.implicits._
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 
+import config._
 import GithubService.{NoLabel, YesLabel}
 import model._
 
@@ -80,11 +81,20 @@ class WebhookRoutesSpec
                 headers = issueHeaders, body = body)
   }
 
+  val config = CLAConfig(
+    IndividualCLAConfig(
+      "spreadsheet-id",
+      "sheet-name",
+      "column"
+    ),
+    List("ignore")
+  )
+
   "The service" should {
     "add a label and comment on new pull request if user has not signed CLA" in {
       val gsheetsMock = spy(new GsheetsServiceTestImpl)
       val githubMock  = spy(new GithubServiceTestImpl)
-      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock).routes.orNotFound
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
 
       endpoints(prEventRequest("userWithNoCla")).unsafeRunSync()
 
@@ -109,7 +119,7 @@ class WebhookRoutesSpec
     "add a label but not comment if user has signed CLA" in {
       val gsheetsMock = spy(new GsheetsServiceTestImpl)
       val githubMock  = spy(new GithubServiceTestImpl)
-      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock).routes.orNotFound
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
 
       endpoints(prEventRequest("userWithCla")).unsafeRunSync()
 
@@ -135,9 +145,34 @@ class WebhookRoutesSpec
 
       val gsheetsMock = spy(new GsheetsServiceTestImpl)
       val githubMock  = spy(new GithubServiceTestImpl)
-      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock).routes.orNotFound
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
 
       endpoints(prEventRequest("userCollaborator")).unsafeRunSync()
+
+      there was no(gsheetsMock).findLogin("")
+      there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
+      there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
+
+      /**gsheetsMock was never called on findLogin(eqTo("userCollaborator"))
+      githubMock was never called on addLabel(
+        eqTo(Repository("repo", User("owner"))),
+        eqTo(Issue(1)),
+        eqTo(YesLabel)
+      )
+      githubMock was never called on postComment(
+        eqTo(Repository("repo", User("owner"))),
+        eqTo(Issue(1)),
+        eqTo("")
+      )**/
+    }
+
+    "not do anything if user is in the list of people to ignore" in {
+
+      val gsheetsMock = spy(new GsheetsServiceTestImpl)
+      val githubMock  = spy(new GithubServiceTestImpl)
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
+
+      endpoints(prEventRequest("ignore")).unsafeRunSync()
 
       there was no(gsheetsMock).findLogin("")
       there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
@@ -159,7 +194,7 @@ class WebhookRoutesSpec
     "not do anything if pinged and there is no 'cla:no' label" in {
       val gsheetsMock = spy(new GsheetsServiceTestImpl)
       val githubMock  = spy(new GithubServiceTestImpl)
-      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock).routes.orNotFound
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
 
       endpoints(commentEventRequest("userWithCla", 0)).unsafeRunSync()
 
@@ -183,7 +218,7 @@ class WebhookRoutesSpec
     "not post a comment if pinged and there is a 'cla:no' label but user has not yet signed cla" in {
       val gsheetsMock = spy(new GsheetsServiceTestImpl)
       val githubMock  = spy(new GithubServiceTestImpl)
-      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock).routes.orNotFound
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
 
       endpoints(commentEventRequest("userWithoutCla", 1)).unsafeRunSync()
 
@@ -207,7 +242,7 @@ class WebhookRoutesSpec
     "post a comment if pinged, there is 'cla:no' label and user has signed the cla" in {
       val gsheetsMock = spy(new GsheetsServiceTestImpl)
       val githubMock  = spy(new GithubServiceTestImpl)
-      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock).routes.orNotFound
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
 
       endpoints(commentEventRequest("userWithCla", 1)).unsafeRunSync()
 
