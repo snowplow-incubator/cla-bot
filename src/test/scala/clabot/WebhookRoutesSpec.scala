@@ -103,17 +103,6 @@ class WebhookRoutesSpec
         .addLabel(Repository("repo", User("owner")), Issue(1), NoLabel)
       there was one(githubMock)
         .postComment(Repository("repo", User("owner")), Issue(1), GithubService.noMessage)
-      /**gsheetsMock wasCalled onceOn findLogin(eqTo("userWithNoCla"))
-      githubMock wasCalled onceOn addLabel(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1, None)),
-        eqTo(NoLabel)
-      )
-      githubMock wasCalled onceOn postComment(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1, None)),
-        eqTo(GithubService.noMessage)
-      )**/
     }
 
     "add a label but not comment if user has signed CLA" in {
@@ -127,18 +116,6 @@ class WebhookRoutesSpec
       there was one(githubMock)
         .addLabel(Repository("repo", User("owner")), Issue(1), YesLabel)
       there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
-
-      /**gsheetsMock wasCalled onceOn findLogin(eqTo("userWithCla"))
-      githubMock wasCalled onceOn addLabel(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo(YesLabel)
-      )
-      githubMock was never called on postComment(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo("")
-      )**/
     }
 
     "not do anything if user is a collaborator" in {
@@ -152,18 +129,6 @@ class WebhookRoutesSpec
       there was no(gsheetsMock).findLogin("")
       there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
       there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
-
-      /**gsheetsMock was never called on findLogin(eqTo("userCollaborator"))
-      githubMock was never called on addLabel(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo(YesLabel)
-      )
-      githubMock was never called on postComment(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo("")
-      )**/
     }
 
     "not do anything if user is in the list of people to ignore" in {
@@ -177,18 +142,6 @@ class WebhookRoutesSpec
       there was no(gsheetsMock).findLogin("")
       there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
       there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
-
-      /**gsheetsMock was never called on findLogin(eqTo("userCollaborator"))
-      githubMock was never called on addLabel(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo(YesLabel)
-      )
-      githubMock was never called on postComment(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo("")
-      )**/
     }
 
     "not do anything if pinged and there is no 'cla:no' label" in {
@@ -201,18 +154,6 @@ class WebhookRoutesSpec
       there was no(gsheetsMock).findLogin("")
       there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
       there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
-
-      /**gsheetsMock was never called on findLogin(eqTo("userWithCla"))
-      githubMock was never called on addLabel(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo(YesLabel)
-      )
-      githubMock was never called on postComment(
-        eqTo(Repository("repoo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo("")
-      )**/
     }
 
     "not post a comment if pinged and there is a 'cla:no' label but user has not yet signed cla" in {
@@ -225,18 +166,6 @@ class WebhookRoutesSpec
       there was one(gsheetsMock).findLogin("userWithoutCla")
       there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
       there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
-
-      /**gsheetsMock wasCalled onceOn findLogin(eqTo("userWithoutCla"))
-      githubMock was never called on addLabel(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo(YesLabel)
-      )
-      githubMock was never called on postComment(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1)),
-        eqTo("")
-      )**/
     }
 
     "post a comment if pinged, there is 'cla:no' label and user has signed the cla" in {
@@ -254,18 +183,6 @@ class WebhookRoutesSpec
         Issue(1, Some(User("userWithCla"))),
         GithubService.thanksMessage("userWithCla")
       )
-
-      /**gsheetsMock wasCalled onceOn findLogin(eqTo("userWithCla"))
-      githubMock wasCalled onceOn addLabel(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1, Some(User("userWithCla")))),
-        eqTo(YesLabel)
-      )
-      githubMock wasCalled onceOn postComment(
-        eqTo(Repository("repo", User("owner"))),
-        eqTo(Issue(1, Some(User("userWithCla")))),
-        eqTo(GithubService.thanksMessage("userWithCla"))
-      )**/
     }
   }
 
