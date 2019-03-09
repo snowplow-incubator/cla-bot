@@ -12,14 +12,12 @@
  */
 package clabot
 
-import cats.data.EitherT
+import cats.data.{EitherT, NonEmptyList}
 import cats.implicits._
 import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.syntax.either._
-
 import eu.timepit.refined.api.RefType
-
 import gsheets4s._
 import gsheets4s.model._
 
@@ -29,8 +27,12 @@ trait GSheetsService[F[_]] {
 
 }
 
-class GSheetsServiceImpl[F[_]: Sync](credentials: Ref[F, Credentials], spreadsheetId: String, sheetName: String, column: String)
-  extends GSheetsService[F] {
+class GSheetsServiceImpl[F[_]: Sync](
+  credentials: Ref[F, Credentials],
+  spreadsheetId: String,
+  sheetName: String,
+  columns: NonEmptyList[String]
+) extends GSheetsService[F] {
 
   import GSheetsService._
 
@@ -38,7 +40,7 @@ class GSheetsServiceImpl[F[_]: Sync](credentials: Ref[F, Credentials], spreadshe
     getAll.map(logins => logins.find(_ === login))
 
   private val colPosition: Either[GSheetsException, ColPosition] =
-    RefType.applyRef[Col](column).map(ColPosition).leftMap(msg => GSheetsException(msg))
+    RefType.applyRef[Col](columns.head).map(ColPosition).leftMap(msg => GSheetsException(msg))
 
   private val getAll: F[List[String]] = {
     val program = for {

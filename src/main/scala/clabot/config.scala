@@ -12,25 +12,21 @@
  */
 package clabot
 
+import cats.data.NonEmptyList
 import gsheets4s.model.Credentials
 
 object config {
 
   final case class GithubConfig(token: String)
 
-  sealed trait GoogleSheet {
-    def spreadsheetId: String
-    def sheetName: String
-  }
-
-  final case class IndividualCLAConfig(
-    override val spreadsheetId: String,
-    override val sheetName: String,
-    column: String
-  ) extends GoogleSheet
+  final case class GoogleSheet(
+    spreadsheetId: String,
+    sheetName: String,
+    columns: NonEmptyList[String]
+  )
 
   final case class CLAConfig(
-    individualCLA: IndividualCLAConfig,
+    individualCLA: GoogleSheet,
     peopleToIgnore: List[String]
   )
 
