@@ -40,12 +40,7 @@ object ServerStream {
     individualCLAConfig: GoogleSheet
   ): F[GSheetsService[F]] =
     Ref.of[F, Credentials](config.toCredentials)
-      .map(credentialsRef =>
-        new GSheetsServiceImpl[F](credentialsRef,
-          individualCLAConfig.spreadsheetId,
-          individualCLAConfig.sheetName,
-          individualCLAConfig.columns)
-      )
+      .map(credentialsRef => new GSheetsServiceImpl[F](credentialsRef,individualCLAConfig))
 
   def getGithubService[F[_]: Sync](token: String): GithubService[F] =
     new GithubServiceImpl[F](token)
