@@ -23,7 +23,8 @@ import io.circe.config.syntax._
 import io.circe.generic.auto._
 import org.http4s.implicits._
 import org.http4s.server.blaze._
-import clabot.config._
+
+import config._
 
 object Server extends IOApp {
 
@@ -38,14 +39,14 @@ object ServerStream {
 
   def getSheetsService[F[_]: Sync](
     config: GSheetsConfig,
-    claConfig: IndividualCLAConfig
+    individualCLAConfig: GoogleSheet
   ): F[GSheetsService[F]] =
     Ref.of[F, Credentials](config.toCredentials)
       .map(credentialsRef =>
         new GSheetsServiceImpl[F](credentialsRef,
-          claConfig.spreadsheetId,
-          claConfig.sheetName,
-          claConfig.column)
+          individualCLAConfig.spreadsheetId,
+          individualCLAConfig.sheetName,
+          individualCLAConfig.columns)
       )
 
   def getGithubService[F[_]: Sync](token: String): GithubService[F] =
