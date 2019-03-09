@@ -12,7 +12,7 @@
  */
 package clabot
 
-import cats.data.{EitherT, NonEmptyList}
+import cats.data.EitherT
 import cats.implicits._
 import cats.effect._
 import cats.effect.concurrent.Ref
@@ -21,15 +21,15 @@ import eu.timepit.refined.api.RefType
 import gsheets4s._
 import gsheets4s.model._
 
+import config.GoogleSheet
+
 trait GSheetsService[F[_]] {
   def findLogin(login: String): F[Option[String]]
 }
 
 class GSheetsServiceImpl[F[_]: Sync](
   credentials: Ref[F, Credentials],
-  spreadsheetId: String,
-  sheetName: String,
-  columns: NonEmptyList[String]
+  individualCLA: GoogleSheet
 ) extends GSheetsService[F] {
 
   import GSheetsService._
@@ -38,14 +38,16 @@ class GSheetsServiceImpl[F[_]: Sync](
     getAll.map(logins => logins.find(_ === login))
 
   private val colPosition: Either[GSheetsException, ColPosition] =
-    RefType.applyRef[Col](columns.head).map(ColPosition).leftMap(msg => GSheetsException(msg))
+    RefType.applyRef[Col](individualCLA.columns.head)
+      .map(ColPosition)
+      .leftMap(msg => GSheetsException(msg))
 
   private val getAll: F[List[String]] = {
     val program = for {
       col               <- EitherT.fromEither[F](colPosition)
       spreadsheetValues =  GSheets4s[F](credentials).spreadsheetsValues
-      range             =  SheetNameRangeNotation(sheetName, Range(col, col))
-      valueRange        <- EitherT(spreadsheetValues.get(spreadsheetId, range))
+      range             =  SheetNameRangeNotation(individualCLA.sheetName, Range(col, col))
+      valueRange        <- EitherT(spreadsheetValues.get(individualCLA.spreadsheetId, range))
         .leftMap(e => GSheetsException(e.message))
     } yield valueRange.values.flatten
 
