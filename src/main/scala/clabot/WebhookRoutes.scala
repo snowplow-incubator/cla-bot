@@ -31,7 +31,6 @@ class WebhookRoutes[F[_]: Sync: NonEmptyParallel1](
   githubService: GithubService[F],
   claConfig: CLAConfig
 ) extends Http4sDsl[F] {
-
   def routes = HttpRoutes.of[F] {
     case req @ POST -> Root / "webhook" =>
       val eventType = req.headers
@@ -107,9 +106,11 @@ class WebhookRoutes[F[_]: Sync: NonEmptyParallel1](
       .productL(OptionT(foundLabel))
       .flatMapF(user => sheetsService.findLogin(user.login))
       .semiflatMap { login =>
-        val addLabel    = githubService.addLabel(commentEvent.repository, commentEvent.issue, YesLabel)
+        val addLabel = githubService
+          .addLabel(commentEvent.repository, commentEvent.issue, YesLabel)
         val removeLabel = githubService.removeNoLabel(commentEvent.repository, commentEvent.issue)
-        val comment     = githubService.postComment(commentEvent.repository, commentEvent.issue, thanksMessage(login))
+        val comment = githubService
+          .postComment(commentEvent.repository, commentEvent.issue, thanksMessage(login))
 
         (addLabel, removeLabel, comment).parMapN((_, _, _) => ())
       }

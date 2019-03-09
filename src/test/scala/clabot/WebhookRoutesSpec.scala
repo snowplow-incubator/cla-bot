@@ -12,8 +12,9 @@
  */
 package clabot
 
-import cats.implicits._
+import cats.data.NonEmptyList
 import cats.effect.{ContextShift, IO}
+import cats.implicits._
 import github4s.free.domain.{Comment, Label}
 import fs2.Stream
 import io.circe.generic.auto._
@@ -43,23 +44,25 @@ class GithubServiceTestImpl extends GithubService[IO] {
     else
       IO.pure(List(Label(None, NoLabel.value, "foo", "foo", None)))
 
-  override def addLabel(repo: model.Repository, issue: model.Issue, label: GithubService.ClaLabel): IO[List[Label]] =
-    IO.pure(List.empty)
+  override def addLabel(
+    repo: Repository,
+    issue: Issue,
+    label: GithubService.ClaLabel
+  ): IO[List[Label]] = IO.pure(List.empty)
 
-  override def removeNoLabel(repo: model.Repository, issue: model.Issue): IO[List[Label]] = IO.pure(List.empty)
+  override def removeNoLabel(repo: Repository, issue: Issue): IO[List[Label]] = IO.pure(List.empty)
 
-  override def postComment(repo: model.Repository, issue: model.Issue, text: String): IO[Comment] =
+  override def postComment(repo: Repository, issue: Issue, text: String): IO[Comment] =
     IO.pure(Comment(0, "foo", "foo", "foo", None, "foo", "foo"))
 
-  override def findCollaborator(organization: model.Repository, user: model.User): IO[Option[String]] =
+  override def findCollaborator(organization: Repository, user: User): IO[Option[String]] =
     if(user.login === "userCollaborator")
       IO.pure(Some("userCollaborator"))
     else
       IO.pure(None)
 }
 
-class WebhookRoutesSpec
-    extends Specification with Mockito {
+class WebhookRoutesSpec extends Specification with Mockito {
   implicit val cs: ContextShift[IO] =
     IO.contextShift(scala.concurrent.ExecutionContext.Implicits.global)
 
@@ -67,26 +70,25 @@ class WebhookRoutesSpec
 
   private def prEventRequest(login: String) = {
     val prHeaders = Headers(Header("X-GitHub-Event", "pull_request"))
-    val body      = Stream.emits(PullRequestEvent("opened", 1, sampleRepo, User(login)).asJson.noSpaces.getBytes)
+    val body = Stream.emits(
+      PullRequestEvent("opened", 1, sampleRepo, User(login)).asJson.noSpaces.getBytes)
 
-    Request[IO](method = Method.POST, uri = Uri.uri("/webhook"),
-                headers = prHeaders, body = body)
+    Request[IO](method = Method.POST, uri = Uri.uri("/webhook"), headers = prHeaders, body = body)
   }
 
   private def commentEventRequest(login: String, number: Int) = {
     val issueHeaders = Headers(Header("X-GitHub-Event", "issue_comment"))
-    val body         = Stream.emits(IssueCommentEvent("created", Issue(number, User(login).some), sampleRepo, User(login)).asJson.noSpaces.getBytes)
+    val body = Stream.emits(
+      IssueCommentEvent("created", Issue(number, User(login).some), sampleRepo, User(login))
+        .asJson.noSpaces.getBytes
+    )
 
-    Request[IO](method = Method.POST, uri = Uri.uri("/webhook"),
-                headers = issueHeaders, body = body)
+    Request[IO](
+      method = Method.POST, uri = Uri.uri("/webhook"), headers = issueHeaders, body = body)
   }
 
   val config = CLAConfig(
-    IndividualCLAConfig(
-      "spreadsheet-id",
-      "sheet-name",
-      "column"
-    ),
+    GoogleSheet("spreadsheet-id", "sheet-name", NonEmptyList.one("column")),
     List("ignore")
   )
 
@@ -119,7 +121,6 @@ class WebhookRoutesSpec
     }
 
     "not do anything if user is a collaborator" in {
-
       val gsheetsMock = spy(new GsheetsServiceTestImpl)
       val githubMock  = spy(new GithubServiceTestImpl)
       val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
@@ -132,7 +133,6 @@ class WebhookRoutesSpec
     }
 
     "not do anything if user is in the list of people to ignore" in {
-
       val gsheetsMock = spy(new GsheetsServiceTestImpl)
       val githubMock  = spy(new GithubServiceTestImpl)
       val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
@@ -156,7 +156,7 @@ class WebhookRoutesSpec
       there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
     }
 
-    "not post a comment if pinged and there is a 'cla:no' label but user has not yet signed cla" in {
+    "not post a comment if pinged and there is a no label but user has not yet signed the cla" in {
       val gsheetsMock = spy(new GsheetsServiceTestImpl)
       val githubMock  = spy(new GithubServiceTestImpl)
       val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound

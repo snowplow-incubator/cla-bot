@@ -14,19 +14,16 @@ package clabot
 
 import cats.implicits._
 import cats.effect.Sync
-
 import github4s.Github
 import github4s.Github._
 import github4s.GithubResponses.GHResponse
 import github4s.cats.effect.jvm.Implicits._
 import github4s.free.domain.{Comment, Label}
-
 import scalaj.http.HttpResponse
 
 import model._
 
 trait GithubService[F[_]] {
-
   import GithubService._
 
   def listLabels(repo: Repository, issue: Issue): F[List[Label]]
@@ -38,11 +35,9 @@ trait GithubService[F[_]] {
   def postComment(repo: Repository, issue: Issue, text: String): F[Comment]
 
   def findCollaborator(repo: Repository, user: User): F[Option[String]]
-
 }
 
 class GithubServiceImpl[F[_]: Sync](token: String) extends GithubService[F] {
-
   import GithubService._
 
   val gh = Github(Some(token))
@@ -78,7 +73,6 @@ class GithubServiceImpl[F[_]: Sync](token: String) extends GithubService[F] {
 }
 
 object GithubService {
-
   val noMessage = """Thanks for your pull request. Is this your first contribution to a Snowplow open source project? Before we can look at your pull request, you'll need to sign a Contributor License Agreement (CLA).
                     |
                     |:memo: Please visit https://github.com/snowplow/snowplow/wiki/CLA to learn more and sign.
@@ -87,7 +81,6 @@ object GithubService {
                     |""".stripMargin
 
   def thanksMessage(login: String) = s"Confirmed! @$login has signed the Individual Contributor License Agreement. Thanks so much."
-
 
   sealed abstract class ClaLabel(val value: String)
   final case object YesLabel extends ClaLabel("cla:yes")

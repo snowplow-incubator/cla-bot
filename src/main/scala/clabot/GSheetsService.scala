@@ -22,9 +22,7 @@ import gsheets4s._
 import gsheets4s.model._
 
 trait GSheetsService[F[_]] {
-
   def findLogin(login: String): F[Option[String]]
-
 }
 
 class GSheetsServiceImpl[F[_]: Sync](
@@ -47,7 +45,8 @@ class GSheetsServiceImpl[F[_]: Sync](
       col               <- EitherT.fromEither[F](colPosition)
       spreadsheetValues =  GSheets4s[F](credentials).spreadsheetsValues
       range             =  SheetNameRangeNotation(sheetName, Range(col, col))
-      valueRange        <- EitherT(spreadsheetValues.get(spreadsheetId, range)).leftMap(e => GSheetsException(e.message))
+      valueRange        <- EitherT(spreadsheetValues.get(spreadsheetId, range))
+        .leftMap(e => GSheetsException(e.message))
     } yield valueRange.values.flatten
 
     program.value.flatMap(Sync[F].fromEither)
@@ -55,7 +54,5 @@ class GSheetsServiceImpl[F[_]: Sync](
 }
 
 object GSheetsService {
-
-  case class GSheetsException(msg: String) extends RuntimeException(msg)
-
+  final case class GSheetsException(msg: String) extends RuntimeException(msg)
 }
