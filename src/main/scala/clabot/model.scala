@@ -30,8 +30,8 @@ object model {
 
 
   /**
-    * Event emitted by the github webhook for issues (the PR is also treated as an issue). Used here for listening to
-    * PR comments.
+    * Event emitted by the github webhook for issues (the PR is also treated as an issue).
+    * Used here for listening to PR comments.
     * @param action what triggered the event, we are only interested in `created`
     * @param issue issue object containing the issue number
     * @param repository data about the repository

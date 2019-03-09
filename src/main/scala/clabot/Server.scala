@@ -27,13 +27,11 @@ import org.http4s.server.blaze._
 import config._
 
 object Server extends IOApp {
-
   override def run(args: List[String]): IO[ExitCode] =
     ServerStream.stream[IO].compile.lastOrError
 }
 
 object ServerStream {
-
   def getConfig[F[_]: Sync]: F[CLABotConfig] =
     Sync[F].fromEither(ConfigFactory.load().as[CLABotConfig])
 
@@ -63,5 +61,4 @@ object ServerStream {
         .withHttpApp(webhookRoutes.routes.orNotFound)
         .serve
     } yield exitCode
-
 }
