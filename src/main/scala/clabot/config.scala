@@ -27,6 +27,7 @@ object config {
 
   final case class CLAConfig(
     individualCLA: GoogleSheet,
+    corporateCLA: GoogleSheet,
     peopleToIgnore: List[String]
   )
 

@@ -29,27 +29,31 @@ trait GSheetsService[F[_]] {
 
 class GSheetsServiceImpl[F[_]: Sync](
   credentials: Ref[F, Credentials],
-  individualCLA: GoogleSheet
+  individualCLA: GoogleSheet,
+  corporateCLA: GoogleSheet
 ) extends GSheetsService[F] {
 
   import GSheetsService._
 
   def findLogin(login: String): F[Option[String]] =
-    getAll.map(logins => logins.find(_ === login))
+    getAll(individualCLA).map(logins => logins.find(_ === login))
+      .orElse(getAll(corporateCLA).map(logins => logins.find(_ === login)))
 
-  private val colPosition: Either[GSheetsException, ColPosition] =
-    RefType.applyRef[Col](individualCLA.columns.head)
+  private def colPosition(col: String): Either[GSheetsException, ColPosition] =
+    RefType.applyRef[Col](col)
       .map(ColPosition)
       .leftMap(msg => GSheetsException(msg))
 
-  private val getAll: F[List[String]] = {
-    val program = for {
-      col               <- EitherT.fromEither[F](colPosition)
+  private def getAll(googleSheet: GoogleSheet): F[List[String]] = {
+    val program: EitherT[F, GSheetsException, List[String]] = for {
+      cols <- googleSheet.columns.traverse(c => EitherT.fromEither[F](colPosition(c)))
       spreadsheetValues =  GSheets4s[F](credentials).spreadsheetsValues
-      range             =  SheetNameRangeNotation(individualCLA.sheetName, Range(col, col))
-      valueRange        <- EitherT(spreadsheetValues.get(individualCLA.spreadsheetId, range))
-        .leftMap(e => GSheetsException(e.message))
-    } yield valueRange.values.flatten
+      ranges = cols.map(c => SheetNameRangeNotation(googleSheet.sheetName, Range(c, c)))
+      valueRanges <- ranges.traverse { r =>
+        EitherT(spreadsheetValues.get(googleSheet.spreadsheetId, r))
+          .leftMap(e => GSheetsException(e.message))
+      }
+    } yield valueRanges.map(_.values.flatten).toList.flatten
 
     program.value.flatMap(Sync[F].fromEither)
   }
