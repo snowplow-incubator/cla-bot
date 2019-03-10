@@ -18,12 +18,12 @@ select at least *Pull requests* and *Issue comments*.
 
 ### Google Sheets setup
 
-The sheet must contain a column with each row containing a GitHub login of the users
-that have signed the CLA. You can configure which column the bot should look at.
+The sheets must contain columns with each row containing a GitHub login of the users
+that have signed the CLA. You can configure which columns the bot should look at.
 
 ### Configuration
 
-Once all setup is done, we can fill up our configuration file.
+Once the setup is done, we can fill our configuration file.
 An example configuration is shown here:
 
 ```
@@ -77,24 +77,23 @@ java -Dconfig.file=application.conf \
   -jar target/scala-2.12/cla-bot-0.1.0.jar
 ```
 
-### How does the bot algorithm work
-
-*Note: the bot currently does not handle the Software Grant and Corporate Contributor License Agreement.*
+### How the bot algorithm works
 
 ##### Pull Request is opened
 - If user submitting the PR is a collaborator (this includes members of the organization),
   the bot ignores the PR.
 
-- If the user is not a collaborator, but has signed the CLA, the bot adds a `cla:yes` label.
+- If the user is not a collaborator
+  - and is in the `peopleToIgnore` list, or
+  - and has signed the CLA, the bot adds a `cla:yes` label
 
-- If the user is not a collaborator and has not signed the CLA, the bot adds a
-  `cla:no` label and posts a comment reminding the user to sign the CLA.
+- If the user is not a collaborator, is not in the `peopleToIgnore` list and has not signed
+  the CLA, the bot adds a `cla:no` label and posts a comment reminding the user to sign the CLA.
 
   The bot then listens to incoming comments in the PR. If the author of the
   comment is also the author of the PR ("pinging"), then the bot checks the
   CLA again. If the CLA is now signed, the bot posts a comment with a thank you message.
   Otherwise it ignores the comment.
-
 
 ## Copyright and license
 
@@ -108,7 +107,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
 [license]: http://www.apache.org/licenses/LICENSE-2.0
