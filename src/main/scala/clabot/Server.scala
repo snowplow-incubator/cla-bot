@@ -37,10 +37,11 @@ object ServerStream {
 
   def getSheetsService[F[_]: Sync](
     config: GSheetsConfig,
-    individualCLAConfig: GoogleSheet
+    individualCLA: GoogleSheet,
+    corporateCLA: GoogleSheet
   ): F[GSheetsService[F]] =
     Ref.of[F, Credentials](config.toCredentials)
-      .map(credentialsRef => new GSheetsServiceImpl[F](credentialsRef,individualCLAConfig))
+      .map(credsRef => new GSheetsServiceImpl[F](credsRef, individualCLA, corporateCLA))
 
   def getGithubService[F[_]: Sync](token: String): GithubService[F] =
     new GithubServiceImpl[F](token)
@@ -48,7 +49,8 @@ object ServerStream {
   def stream[F[_]: ConcurrentEffect: NonEmptyParallel1: Timer]: Stream[F, ExitCode] =
     for {
       config         <- Stream.eval(getConfig[F])
-      sheetService   <- Stream.eval(getSheetsService[F](config.gsheets, config.cla.individualCLA))
+      sheetService   <- Stream.eval(
+        getSheetsService[F](config.gsheets, config.cla.individualCLA, config.cla.corporateCLA))
       githubService  =  getGithubService[F](config.github.token)
       webhookRoutes  =  new WebhookRoutes[F](sheetService, githubService, config.cla)
       exitCode       <- BlazeServerBuilder[F]
