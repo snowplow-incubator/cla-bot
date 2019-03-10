@@ -18,7 +18,7 @@ select at least *Pull requests* and *Issue comments*.
 
 ### Google Sheets setup
 
-The sheet must contain a column with each row containing a GitHub login of the users 
+The sheet must contain a column with each row containing a GitHub login of the users
 that have signed the CLA. You can configure which column the bot should look at.
 
 ### Configuration
@@ -28,19 +28,36 @@ An example configuration is shown here:
 
 ```
 port = 8080
+host = localhost
 
 github {
-    token = 1234567890abcdefghijk
+  token = 1234567890abcdefghijk
 }
 
 gsheets {
-    client-id      = foobar.apps.googleusercontent.com
-    client-secret  = YOUR_GSHEETS_SECRET
-    access-token   = YOUR_GSHEETS_ACCESS_TOKEN
-    refresh-token  = YOUR_GSHEETS_REFRESH_TOKEN
-    spreadsheet-id = SPREADSHEET_ID
-    sheet-name     = SHEET_NAME
-    column         = A
+  clientId     = GOOGLE_SHEETS_CLIENT_ID
+  clientSecret = GOOGLE_SHEETS_CLIENT_SECRET
+  accessToken  = GOOGLE_ACCESS_TOKEN
+  refreshToken = GOOGLE_REFRESH_TOKEN
+}
+
+cla {
+  individualCLA {
+    # id of the spreadsheet (the one from the spreadsheet URL)
+    spreadsheetId = GOOGLE_SPREADSHEET_ID
+    sheetName     = GOOGLE_SPREADSHEET_NAME
+    # columns containing GitHub logins
+    columns        = [ A ]
+  }
+  corporateCLA {
+    # id of the spreadsheet (the one from the spreadsheet URL)
+    spreadsheetId = GOOGLE_SPREADSHEET_ID
+    sheetName     = GOOGLE_SPREADSHEET_NAME
+    # columns containing GitHub logins
+    columns        = [ A ]
+  }
+  # list of GitHub logins which do not require signing the CLA
+  peopleToIgnore = [ "scala-steward" ]
 }
 ```
 
@@ -67,12 +84,12 @@ java -Dconfig.file=application.conf \
 ##### Pull Request is opened
 - If user submitting the PR is a collaborator (this includes members of the organization),
   the bot ignores the PR.
-  
+
 - If the user is not a collaborator, but has signed the CLA, the bot adds a `cla:yes` label.
 
 - If the user is not a collaborator and has not signed the CLA, the bot adds a
-  `cla:no` label and posts a comment reminding the user to sign the CLA. 
-       
+  `cla:no` label and posts a comment reminding the user to sign the CLA.
+
   The bot then listens to incoming comments in the PR. If the author of the
   comment is also the author of the PR ("pinging"), then the bot checks the
   CLA again. If the CLA is now signed, the bot posts a comment with a thank you message.
