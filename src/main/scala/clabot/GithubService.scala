@@ -86,7 +86,7 @@ object GithubService {
                     |Once you've signed, please reply here (e.g. I signed it!) and we'll verify. Thanks.
                     |""".stripMargin
 
-  def thanksMessage(login: String) = s"Confirmed! @$login has signed the Individual Contributor License Agreement. Thanks so much."
+  def thanksMessage(login: String) = s"Confirmed! @$login has signed the Contributor License Agreement. Thanks so much."
 
 
   sealed abstract class ClaLabel(val value: String)
