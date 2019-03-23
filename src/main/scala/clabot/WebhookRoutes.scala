@@ -68,7 +68,7 @@ class WebhookRoutes[F[_]: Sync: NonEmptyParallel1](
     }
 
   def handleNewPullRequest(prEvent: PullRequestEvent, peopleToIgnore: List[String]): F[Unit] =
-    if (peopleToIgnore.contains(prEvent.sender)) {
+    if (peopleToIgnore.contains(prEvent.sender.login)) {
       Sync[F].unit
     } else {
       OptionT(githubService.findCollaborator(prEvent.repository, prEvent.sender))
