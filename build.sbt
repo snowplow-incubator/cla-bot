@@ -31,7 +31,7 @@ lazy val dockerSettings = Seq(
   dockerExposedPorts := Seq(8080)
 )
 
-lazy val http4sVersion = "0.20.0-M7"
+lazy val http4sVersion = "0.20.0-RC1"
 lazy val circeVersion = "0.11.1"
 lazy val circeConfigVersion = "0.6.1"
 lazy val github4sVersion = "0.20.1"
