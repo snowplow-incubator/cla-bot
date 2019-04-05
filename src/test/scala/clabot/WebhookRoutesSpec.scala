@@ -69,7 +69,7 @@ class WebhookRoutesSpec extends Specification with Mockito {
   val sampleRepo = Repository("repo", User("owner"))
 
   private def prEventRequest(login: String) = {
-    val prHeaders = Headers(Header("X-GitHub-Event", "pull_request"))
+    val prHeaders = Headers.of(Header("X-GitHub-Event", "pull_request"))
     val body = Stream.emits(
       PullRequestEvent("opened", 1, sampleRepo, User(login)).asJson.noSpaces.getBytes)
 
@@ -77,7 +77,7 @@ class WebhookRoutesSpec extends Specification with Mockito {
   }
 
   private def commentEventRequest(login: String, number: Int) = {
-    val issueHeaders = Headers(Header("X-GitHub-Event", "issue_comment"))
+    val issueHeaders = Headers.of(Header("X-GitHub-Event", "issue_comment"))
     val body = Stream.emits(
       IssueCommentEvent("created", Issue(number, User(login).some), sampleRepo, User(login))
         .asJson.noSpaces.getBytes
