@@ -23,7 +23,8 @@ lazy val baseSettings = Seq(
   organization := "com.snowplowanalytics",
   scalaVersion := "2.12.8",
   version := "0.1.0",
-  name := "cla-bot"
+  name := "cla-bot",
+  licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 )
 
 lazy val dockerSettings = Seq(
