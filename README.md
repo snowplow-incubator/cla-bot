@@ -1,7 +1,8 @@
 # Snowplow CLA bot
 
 [![License][license-image]][license]
-[![Build Status](https://travis-ci.org/snowplow-incubator/cla-bot.svg?branch=master)](https://travis-ci.org/snowplow-incubator/cla-bot)
+![Build](https://github.com/snowplow-incubator/cla-bot/workflows/Build/badge.svg)
+[![Version](https://img.shields.io/bintray/v/snowplow/snowplow-generic/cla-bot)][bintray]
 
 Snowplow CLA bot is a web server which handles GitHub webhook events to check whether
 PR authors have signed the CLA. It uses Google Sheets as a data source.
@@ -74,7 +75,7 @@ Or run the jar directly:
 ```bash
 sbt assembly
 java -Dconfig.file=application.conf \
-  -jar target/scala-2.12/cla-bot-0.1.0.jar
+  -jar target/scala-2.12/cla-bot-0.2.0.jar
 ```
 
 ### How the bot algorithm works
@@ -108,8 +109,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-[license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
+[license-image]: https://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
 [license]: http://www.apache.org/licenses/LICENSE-2.0
+
+[bintray]: https://bintray.com/snowplow/snowplow-generic/cla-bot
 
 [webhooks]: https://developer.github.com/webhooks/
 [log4j]: https://docs.oracle.com/cd/E29578_01/webhelp/cas_webcrawler/src/cwcg_config_log4j_file.html
