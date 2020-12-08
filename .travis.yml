@@ -1,8 +1,0 @@
-dist: trusty
-language: scala
-scala:
-  - 2.12.8
-jdk:
-  - oraclejdk8
-script:
-  - sbt test
