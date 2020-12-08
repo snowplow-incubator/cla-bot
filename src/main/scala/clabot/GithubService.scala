@@ -75,7 +75,7 @@ class GithubServiceImpl[F[_]: Sync](token: String) extends GithubService[F] {
 object GithubService {
   val noMessage = """Thanks for your pull request. Is this your first contribution to a Snowplow open source project? Before we can look at your pull request, you'll need to sign a Contributor License Agreement (CLA).
                     |
-                    |:memo: Please visit https://github.com/snowplow/snowplow/wiki/CLA to learn more and sign.
+                    |:memo: Please visit https://docs.snowplowanalytics.com/docs/contributing/contributor-license-agreement/ to learn more and sign.
                     |
                     |Once you've signed, please reply here (e.g. I signed it!) and we'll verify. Thanks.
                     |""".stripMargin
