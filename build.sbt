@@ -23,7 +23,9 @@ lazy val baseSettings = Seq(
   organization := "com.snowplowanalytics",
   scalaVersion := "2.12.8",
   version := "0.1.0",
-  name := "cla-bot"
+  name := "cla-bot",
+  bintrayOrganization := Some("snowplow"),
+  bintrayRepository := "snowplow-generic"
 )
 
 lazy val dockerSettings = Seq(
