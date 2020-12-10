@@ -22,7 +22,7 @@ lazy val baseSettings = Seq(
   },
   organization := "com.snowplowanalytics",
   scalaVersion := "2.12.8",
-  version := "0.2.0-rc1",
+  version := "0.2.0-rc2",
   name := "cla-bot",
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 )
