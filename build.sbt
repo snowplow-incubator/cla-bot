@@ -21,7 +21,7 @@ lazy val baseSettings = Seq(
     _.filterNot(Set("-Ywarn-unused-import"))
   },
   organization := "com.snowplowanalytics",
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.12.13",
   version := "0.2.0",
   name := "cla-bot",
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
