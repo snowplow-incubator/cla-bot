@@ -15,6 +15,7 @@ package clabot
 import cats.NonEmptyParallel
 import cats.implicits._
 import cats.data.OptionT
+
 import cats.effect._
 
 import org.http4s._
@@ -27,7 +28,7 @@ import clabot.model.{Issue, IssueCommentEvent, PullRequestEvent}
 
 import org.typelevel.ci._
 
-class WebhookRoutes[F[_]: Async: NonEmptyParallel](
+class WebhookRoutes[F[_]: Concurrent: NonEmptyParallel](
   sheetsService: GSheetsService[F],
   githubService: GithubService[F],
   claConfig: CLAConfig
@@ -65,40 +66,30 @@ class WebhookRoutes[F[_]: Async: NonEmptyParallel](
   }
 
   def handlePullRequest(prEvent: PullRequestEvent, peopleToIgnore: List[String]): F[Unit] =
-    if (prEvent.action === "opened") {
-      handleNewPullRequest(prEvent, peopleToIgnore)
-    } else {
-      Sync[F].unit
-    }
+    if (prEvent.action === "opened") handleNewPullRequest(prEvent, peopleToIgnore)
+    else Concurrent[F].unit
 
   def handleNewPullRequest(prEvent: PullRequestEvent, peopleToIgnore: List[String]): F[Unit] =
-    if (peopleToIgnore.contains(prEvent.sender.login)) {
-      Sync[F].unit
-    } else {
-      OptionT(githubService.findCollaborator(prEvent.repository, prEvent.sender))
-        .map(_ => ())
-        .orElse(handleNotCollaborator(prEvent))
-        .getOrElseF(handleNoCla(prEvent))
-    }
+    if (peopleToIgnore.contains(prEvent.sender.login)) Concurrent[F].unit
+    else OptionT(githubService.findCollaborator(prEvent.repository, prEvent.sender))
+      .void
+      .orElse(handleNotCollaborator(prEvent))
+      .getOrElseF(handleNoCla(prEvent))
 
   def handleNotCollaborator(prEvent: PullRequestEvent): OptionT[F, Unit] =
     OptionT(sheetsService.findLogin(prEvent.sender.login))
-      .semiflatMap(_ => githubService.addLabel(prEvent.repository, Issue(prEvent.number), YesLabel)
-      .map(_ => ()))
+      .semiflatMap(_ => githubService.addLabel(prEvent.repository, Issue(prEvent.number), YesLabel).void)
 
   def handleNoCla(prEvent: PullRequestEvent): F[Unit] = {
     val addLabel = githubService.addLabel(prEvent.repository, Issue(prEvent.number), NoLabel)
     val comment  = githubService.postComment(prEvent.repository, Issue(prEvent.number), noMessage)
 
-    (addLabel, comment).parMapN((_, _) => ())
+    (addLabel, comment).parTupled.void
   }
 
   def handleIssueComment(commentEvent: IssueCommentEvent): F[Unit] =
-    if (commentEvent.action == "created") {
-      handleNewComment(commentEvent)
-    } else {
-      Sync[F].unit
-    }
+    if (commentEvent.action == "created") handleNewComment(commentEvent)
+    else Concurrent[F].unit
 
   def handleNewComment(commentEvent: IssueCommentEvent): F[Unit] = {
     val foundLabel = githubService
@@ -115,9 +106,9 @@ class WebhookRoutes[F[_]: Async: NonEmptyParallel](
         val comment = githubService
           .postComment(commentEvent.repository, commentEvent.issue, thanksMessage(login))
 
-        (addLabel, removeLabel, comment).parMapN((_, _, _) => ())
+        (addLabel, removeLabel, comment).parTupled.void
       }
-      .getOrElseF(Sync[F].unit)
+      .getOrElseF(Concurrent[F].unit)
   }
 
 }

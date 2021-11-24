@@ -19,12 +19,9 @@ import cats.effect._
 
 import com.typesafe.config.ConfigFactory
 
-import fs2.Stream
-
 import io.circe.config.syntax._
 import io.circe.generic.auto._
 
-import org.http4s.implicits._
 import org.http4s.client.Client
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.blaze.server.BlazeServerBuilder
@@ -33,14 +30,21 @@ import gsheets4s.model.Credentials
 
 import clabot.config._
 
-object Server extends IOApp {
-  override def run(args: List[String]): IO[ExitCode] =
-    BlazeClientBuilder.apply[IO].resource.use { client =>
-      stream[IO](client).compile.lastOrError
-    }
+object Main extends ResourceApp.Simple {
+  def run = runServer[IO]
+
+  def runServer[F[_]: Async: NonEmptyParallel] =
+    for {
+      config        <- Resource.eval(getConfig[F])
+      httpClient    <- BlazeClientBuilder[F].resource
+      sheetService  <- Resource.eval(getSheetsService[F](httpClient, config.gsheets, config.cla.individualCLA, config.cla.corporateCLA))
+      githubService  = new GithubServiceImpl[F](httpClient, config.github.token)
+      webhookRoutes  = new WebhookRoutes[F](sheetService, githubService, config.cla)
+      _             <- BlazeServerBuilder[F].bindHttp(config.port, config.host).withHttpApp(webhookRoutes.routes.orNotFound).resource
+    } yield ()
 
   def getConfig[F[_]: Sync]: F[CLABotConfig] =
-    Sync[F].fromEither(ConfigFactory.load().as[CLABotConfig])
+    Sync[F].delay(ConfigFactory.load().as[CLABotConfig]).flatMap(Sync[F].fromEither)
 
   def getSheetsService[F[_]: Concurrent](
     httpClient: Client[F],
@@ -51,17 +55,4 @@ object Server extends IOApp {
     Ref.of[F, Credentials](config.toCredentials)
       .map(credsRef => new GSheetsServiceImpl[F](httpClient, credsRef, individualCLA, corporateCLA))
 
-
-  def stream[F[_]: Async: NonEmptyParallel](httpClient: Client[F]): Stream[F, ExitCode] =
-    for {
-      config         <- Stream.eval(getConfig[F])
-      sheetService   <- Stream.eval(
-        getSheetsService[F](httpClient, config.gsheets, config.cla.individualCLA, config.cla.corporateCLA))
-      githubService   = new GithubServiceImpl[F](httpClient, config.github.token)
-      webhookRoutes   = new WebhookRoutes[F](sheetService, githubService, config.cla)
-      exitCode       <- BlazeServerBuilder.apply[F]
-        .bindHttp(config.port, config.host)
-        .withHttpApp(webhookRoutes.routes.orNotFound)
-        .serve
-    } yield exitCode
 }
