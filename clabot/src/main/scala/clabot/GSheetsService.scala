@@ -14,7 +14,10 @@ package clabot
 
 import cats.data.EitherT
 import cats.implicits._
+
 import cats.effect._
+
+import org.http4s.client.Client
 
 import eu.timepit.refined.api.RefType
 
@@ -27,7 +30,8 @@ trait GSheetsService[F[_]] {
   def findLogin(login: String): F[Option[String]]
 }
 
-class GSheetsServiceImpl[F[_]: Sync](
+class GSheetsServiceImpl[F[_]: Concurrent](
+  client: Client[F],
   credentials: Ref[F, Credentials],
   individualCLA: GoogleSheet,
   corporateCLA: GoogleSheet
@@ -47,7 +51,7 @@ class GSheetsServiceImpl[F[_]: Sync](
   private def getAll(googleSheet: GoogleSheet): F[List[String]] = {
     val program: EitherT[F, GSheetsException, List[String]] = for {
       cols <- googleSheet.columns.traverse(c => EitherT.fromEither[F](colPosition(c)))
-      spreadsheetValues =  GSheets4s[F](credentials).spreadsheetsValues
+      spreadsheetValues =  GSheets4s[F](client, credentials).spreadsheetsValues
       ranges = cols.map(c => SheetNameRangeNotation(googleSheet.sheetName, Range(c, c)))
       valueRanges <- ranges.traverse { r =>
         EitherT(spreadsheetValues.get(googleSheet.spreadsheetId, r))
@@ -55,7 +59,7 @@ class GSheetsServiceImpl[F[_]: Sync](
       }
     } yield valueRanges.map(_.values.flatten).toList.flatten
 
-    program.value.flatMap(Sync[F].fromEither)
+    program.value.flatMap(Concurrent[F].fromEither)
   }
 }
 

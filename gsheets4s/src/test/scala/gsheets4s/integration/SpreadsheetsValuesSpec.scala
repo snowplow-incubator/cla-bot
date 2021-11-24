@@ -6,6 +6,8 @@ import cats.effect.unsafe.IORuntime
 
 import eu.timepit.refined.auto._
 
+import org.http4s.blaze.client.BlazeClientBuilder
+
 import org.specs2.mutable.Specification
 
 import gsheets4s.model._
@@ -30,12 +32,13 @@ class SpreadsheetsValuesSpec extends Specification {
 
   "RestSpreadsheetsValues" >> {
     "update and get values" >> {
-      val res = (for {
-        credsRef <- Ref.of[IO, Credentials](creds.get)
-        spreadsheetsValues = GSheets4s(credsRef).spreadsheetsValues
-        prog <- new TestPrograms(spreadsheetsValues)
-          .updateAndGet(spreadsheetID, vr, vio)
-      } yield prog).unsafeRunSync()
+      val res = BlazeClientBuilder[IO].resource.use { client =>
+        for {
+          credsRef <- Ref.of[IO, Credentials](creds.get)
+          spreadsheetsValues = GSheets4s(client, credsRef).spreadsheetsValues
+          prog <- new TestPrograms(spreadsheetsValues).updateAndGet(spreadsheetID, vr, vio)
+        } yield prog
+      }.unsafeRunSync()
 
       res must beRight
       val Right((uvr, vr2)) = res
@@ -46,12 +49,14 @@ class SpreadsheetsValuesSpec extends Specification {
     }
 
     "report an error if the spreadsheet it doesn't exist" >> {
-      val res = (for {
-        credsRef <- Ref.of[IO, Credentials](creds.get)
-        spreadsheetsValues = GSheets4s(credsRef).spreadsheetsValues
-        prog <- new TestPrograms(spreadsheetsValues)
-          .updateAndGet("not-existing-spreadsheetid", vr, vio)
-      } yield prog).unsafeRunSync()
+      val res = BlazeClientBuilder[IO].resource.use { client =>
+        for {
+          credsRef <- Ref.of[IO, Credentials](creds.get)
+          spreadsheetsValues = GSheets4s(client, credsRef).spreadsheetsValues
+          prog <- new TestPrograms(spreadsheetsValues)
+            .updateAndGet("not-existing-spreadsheetid", vr, vio)
+        } yield prog
+      }.unsafeRunSync()
 
       res must beLeft
       val Left(err) = res
@@ -61,12 +66,14 @@ class SpreadsheetsValuesSpec extends Specification {
     }
 
     "work with a faulty access token" >> {
-      val res = (for {
-        credsRef <- Ref.of[IO, Credentials](creds.get.copy(accessToken = "faulty"))
-        spreadsheetsValues = GSheets4s(credsRef).spreadsheetsValues
-        prog <- new TestPrograms(spreadsheetsValues)
-          .updateAndGet(spreadsheetID, vr, vio)
-      } yield prog).unsafeRunSync()
+      val res = BlazeClientBuilder[IO].resource.use { client =>
+        for {
+          credsRef <- Ref.of[IO, Credentials](creds.get.copy(accessToken = "faulty"))
+          spreadsheetsValues = GSheets4s(client, credsRef).spreadsheetsValues
+          prog <- new TestPrograms(spreadsheetsValues)
+            .updateAndGet(spreadsheetID, vr, vio)
+        } yield prog
+      }.unsafeRunSync()
 
       res must beRight
       val Right((uvr, vr2)) = res
