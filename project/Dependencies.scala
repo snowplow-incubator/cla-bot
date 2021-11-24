@@ -15,7 +15,7 @@ object Dependencies {
     lazy val circeConfig = "0.8.0"
     lazy val github4s = "0.30.0"
     lazy val logback = "1.2.3"
-    lazy val specs2 = "4.6.0"
+    lazy val specs2 = "4.13.0"
     lazy val mockito = "0.3.0"
   }
 
