@@ -13,15 +13,13 @@
 package clabot
 
 import cats.implicits._
-import cats.effect.Sync
+import cats.effect.Concurrent
 
 import github4s.Github
-import github4s.Github._
-import github4s.GithubResponses.GHResponse
-import github4s.cats.effect.jvm.Implicits._
-import github4s.free.domain.{Comment, Label}
+import github4s.GHResponse
+import github4s.domain.{Comment, Label}
 
-import scalaj.http.HttpResponse
+import org.http4s.client.Client
 
 import clabot.model._
 
@@ -39,37 +37,28 @@ trait GithubService[F[_]] {
   def findCollaborator(repo: Repository, user: User): F[Option[String]]
 }
 
-class GithubServiceImpl[F[_]: Sync](token: String) extends GithubService[F] {
+class GithubServiceImpl[F[_]: Concurrent](client: Client[F], token: String) extends GithubService[F] {
   import GithubService._
 
-  val gh = Github(Some(token))
+  val gh = Github(client, Some(token))
 
   private def extractResult[A](response: GHResponse[A]): F[A] =
-    Sync[F].fromEither(response.map(_.result))
+    Concurrent[F].fromEither(response.result)
 
   def listLabels(repo: Repository, issue: Issue): F[List[Label]] =
-    gh.issues.listLabels(repo.owner.login, repo.name, issue.number)
-      .exec[F, HttpResponse[String]]()
-      .flatMap(extractResult)
+    gh.issues.listLabels(repo.owner.login, repo.name, issue.number).flatMap(extractResult)
 
   def addLabel(repo: Repository, issue: Issue, label: ClaLabel): F[List[Label]] =
-    gh.issues.addLabels(repo.owner.login, repo.name, issue.number, List(label.value))
-      .exec[F, HttpResponse[String]]()
-      .flatMap(extractResult)
+    gh.issues.addLabels(repo.owner.login, repo.name, issue.number, List(label.value)).flatMap(extractResult)
 
   def removeNoLabel(repo: Repository, issue: Issue): F[List[Label]] =
-    gh.issues.removeLabel(repo.owner.login, repo.name, issue.number, NoLabel.value)
-      .exec[F, HttpResponse[String]]()
-      .flatMap(extractResult)
+    gh.issues.removeLabel(repo.owner.login, repo.name, issue.number, NoLabel.value).flatMap(extractResult)
 
   def postComment(repo: Repository, issue: Issue, text: String): F[Comment] =
-    gh.issues.createComment(repo.owner.login, repo.name, issue.number, text)
-      .exec[F, HttpResponse[String]]()
-      .flatMap(extractResult)
+    gh.issues.createComment(repo.owner.login, repo.name, issue.number, text).flatMap(extractResult)
 
   def findCollaborator(repo: Repository, user: User): F[Option[String]] =
     gh.repos.listCollaborators(repo.owner.login, repo.name)
-      .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
       .map(users => users.map(_.login).find(_ === user.login))
 }

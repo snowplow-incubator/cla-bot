@@ -3,8 +3,7 @@ package http
 
 import cats.Monad
 import cats.data.NonEmptyList
-import cats.effect.Sync
-import cats.effect.concurrent.Ref
+import cats.effect.{ Sync, Ref }
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.show._

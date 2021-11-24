@@ -15,8 +15,7 @@ package clabot
 import cats.NonEmptyParallel
 import cats.implicits._
 
-import cats.effect.{ExitCode, IOApp, Timer, ConcurrentEffect, IO, Sync}
-import cats.effect.concurrent.Ref
+import cats.effect._
 
 import com.typesafe.config.ConfigFactory
 
@@ -26,7 +25,8 @@ import io.circe.config.syntax._
 import io.circe.generic.auto._
 
 import org.http4s.implicits._
-import org.http4s.server.blaze._
+import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 
 import gsheets4s.model.Credentials
 
@@ -34,10 +34,8 @@ import clabot.config._
 
 object Server extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
-    ServerStream.stream[IO].compile.lastOrError
-}
+    stream[IO].compile.lastOrError
 
-object ServerStream {
   def getConfig[F[_]: Sync]: F[CLABotConfig] =
     Sync[F].fromEither(ConfigFactory.load().as[CLABotConfig])
 
@@ -49,17 +47,17 @@ object ServerStream {
     Ref.of[F, Credentials](config.toCredentials)
       .map(credsRef => new GSheetsServiceImpl[F](credsRef, individualCLA, corporateCLA))
 
-  def getGithubService[F[_]: Sync](token: String): GithubService[F] =
-    new GithubServiceImpl[F](token)
+  def getGithubService[F[_]: Async](token: String): Resource[F, GithubService[F]] =
+    BlazeClientBuilder.apply[F].resource.map { client => new GithubServiceImpl[F](client, token) }
 
-  def stream[F[_]: ConcurrentEffect: NonEmptyParallel: Timer]: Stream[F, ExitCode] =
+  def stream[F[_]: Async: NonEmptyParallel]: Stream[F, ExitCode] =
     for {
       config         <- Stream.eval(getConfig[F])
       sheetService   <- Stream.eval(
         getSheetsService[F](config.gsheets, config.cla.individualCLA, config.cla.corporateCLA))
-      githubService  =  getGithubService[F](config.github.token)
+      githubService  <- Stream.resource(getGithubService[F](config.github.token))
       webhookRoutes  =  new WebhookRoutes[F](sheetService, githubService, config.cla)
-      exitCode       <- BlazeServerBuilder[F]
+      exitCode       <- BlazeServerBuilder.apply[F]
         .bindHttp(config.port, config.host)
         .withHttpApp(webhookRoutes.routes.orNotFound)
         .serve

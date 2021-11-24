@@ -3,18 +3,18 @@ import sbt.Keys._
 
 object Dependencies {
   object V {
-    lazy val catsEffect = "1.4.0"
+    lazy val catsEffect = "3.2.9"
     lazy val refined = "0.9.2"
-    lazy val atto = "0.6.3"
+    lazy val atto = "0.9.5"
     lazy val hammock = "0.9.0"
     lazy val scalaUri = "3.6.0"
     lazy val scalacheck = "1.14.0"
     lazy val scalatest = "3.0.5"
 
-    lazy val http4s = "0.20.9"
-    lazy val circe = "0.11.1"
+    lazy val http4s = "0.23.6"
+    lazy val circe = "0.14.1"
     lazy val circeConfig = "0.6.1"
-    lazy val github4s = "0.20.1"
+    lazy val github4s = "0.30.0"
     lazy val logback = "1.2.3"
     lazy val specs2 = "4.6.0"
     lazy val mockito = "0.3.0"
@@ -45,13 +45,13 @@ object Dependencies {
   lazy val All = Seq(
     "org.http4s"              %% "http4s-dsl"           % V.http4s,
     "org.http4s"              %% "http4s-blaze-server"  % V.http4s,
+    "org.http4s"              %% "http4s-blaze-client"  % V.http4s,
     "org.http4s"              %% "http4s-circe"         % V.http4s,
 
     "io.circe"                %% "circe-generic"        % V.circe,
     "io.circe"                %% "circe-config"         % V.circeConfig,
 
     "com.47deg"               %% "github4s"             % V.github4s,
-    "com.47deg"               %% "github4s-cats-effect" % V.github4s,
     "ch.qos.logback"          %  "logback-classic"      % V.logback,
 
     "org.specs2"              %% "specs2-core"          % V.specs2     % Test,

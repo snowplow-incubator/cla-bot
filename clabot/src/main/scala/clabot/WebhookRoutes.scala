@@ -17,30 +17,32 @@ import cats.implicits._
 import cats.data.OptionT
 import cats.effect._
 
-import io.circe.generic.auto._
-
 import org.http4s._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.util.CaseInsensitiveString
 
 import clabot.config.CLAConfig
 import clabot.GithubService._
 import clabot.model.{Issue, IssueCommentEvent, PullRequestEvent}
 
-class WebhookRoutes[F[_]: Sync: NonEmptyParallel](
+import org.typelevel.ci._
+
+class WebhookRoutes[F[_]: Async: NonEmptyParallel](
   sheetsService: GSheetsService[F],
   githubService: GithubService[F],
   claConfig: CLAConfig
 ) extends Http4sDsl[F] {
+
+  import WebhookRoutes._
+
   def routes = HttpRoutes.of[F] {
     case req @ POST -> Root / "webhook" =>
       val eventType = req.headers
-        .get(CaseInsensitiveString("X-GitHub-Event"))
-        .map(_.value)
+        .get(GitHubEvent)
+        .map(_.head)
 
       eventType match {
-        case Some("pull_request")  =>
+        case Some(PullRequest)  =>
           req.as[PullRequestEvent]
             .flatMap(handlePullRequest(_, claConfig.peopleToIgnore))
             .attempt.flatMap {
@@ -48,7 +50,7 @@ class WebhookRoutes[F[_]: Sync: NonEmptyParallel](
               case Right(_) => Ok()
             }
 
-        case Some("issue_comment") =>
+        case Some(IssueComment) =>
           req.as[IssueCommentEvent]
             .flatMap(handleIssueComment)
             .attempt.flatMap {
@@ -56,7 +58,7 @@ class WebhookRoutes[F[_]: Sync: NonEmptyParallel](
               case Right(_) => Ok()
             }
 
-        case Some("ping")          => Ok("pong")
+        case Some(Ping)          => Ok("pong")
         case Some(otherEventType)  => BadRequest(s"Unknown event type $otherEventType")
         case None                  => BadRequest("Malformed webhook format")
       }
@@ -98,7 +100,6 @@ class WebhookRoutes[F[_]: Sync: NonEmptyParallel](
       Sync[F].unit
     }
 
-
   def handleNewComment(commentEvent: IssueCommentEvent): F[Unit] = {
     val foundLabel = githubService
       .listLabels(commentEvent.repository, commentEvent.issue)
@@ -119,4 +120,12 @@ class WebhookRoutes[F[_]: Sync: NonEmptyParallel](
       .getOrElseF(Sync[F].unit)
   }
 
+}
+
+object WebhookRoutes {
+  val GitHubEvent = CIString("X-GitHub-Event")
+
+  val Ping = Header.Raw(GitHubEvent, "ping")
+  val IssueComment = Header.Raw(GitHubEvent, "issue_comment")
+  val PullRequest = Header.Raw(GitHubEvent, "pull_request")
 }
