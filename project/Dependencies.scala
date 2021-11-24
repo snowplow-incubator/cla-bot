@@ -6,7 +6,6 @@ object Dependencies {
     lazy val catsEffect = "3.2.9"
     lazy val refined = "0.9.2"
     lazy val atto = "0.9.5"
-    lazy val hammock = "0.9.0"
     lazy val scalaUri = "3.6.0"
     lazy val scalacheck = "1.14.0"
     lazy val scalatest = "3.0.5"
@@ -32,9 +31,8 @@ object Dependencies {
     "org.tpolecat"    %% "atto-core"           % V.atto,
     "org.tpolecat"    %% "atto-refined"        % V.atto,
 
-    "com.pepegar"     %% "hammock-core"        % V.hammock,
-    "com.pepegar"     %% "hammock-circe"       % V.hammock,
-    "com.pepegar"     %% "hammock-apache-http" % V.hammock,
+    "org.http4s"      %% "http4s-blaze-client" % V.http4s,
+    "org.http4s"      %% "http4s-circe"        % V.http4s,
 
     "org.specs2"      %% "specs2-core"         % V.specs2     % Test,
     "org.specs2"      %% "specs2-mock"         % V.specs2     % Test,
