@@ -7,6 +7,7 @@ import com.typesafe.sbt.packager.Keys._
 object BuildSettings {
 
   lazy val baseSettings = Seq(
+    scalaVersion := "2.13.7",
     Compile / console / scalacOptions ~= {
       _.filterNot(Set("-Ywarn-unused-import"))
     },
