@@ -7,7 +7,7 @@ object Dependencies {
     lazy val refined = "0.9.27"
     lazy val atto = "0.9.5"
     lazy val scalaUri = "3.6.0"
-    lazy val scalacheck = "1.14.0"
+    lazy val scalacheck = "1.15.4"
     lazy val scalatest = "3.0.5"
 
     lazy val http4s = "0.23.6"
