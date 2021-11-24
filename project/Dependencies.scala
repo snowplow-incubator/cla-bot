@@ -4,7 +4,7 @@ import sbt.Keys._
 object Dependencies {
   object V {
     lazy val catsEffect = "3.2.9"
-    lazy val refined = "0.9.2"
+    lazy val refined = "0.9.27"
     lazy val atto = "0.9.5"
     lazy val scalaUri = "3.6.0"
     lazy val scalacheck = "1.14.0"
