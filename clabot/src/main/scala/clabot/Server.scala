@@ -12,19 +12,25 @@
  */
 package clabot
 
-import cats.effect.{ExitCode, IOApp, Timer}
-import cats.effect.concurrent.Ref
+import cats.NonEmptyParallel
 import cats.implicits._
-import cats.effect.{ConcurrentEffect, IO, Sync}
+
+import cats.effect.{ExitCode, IOApp, Timer, ConcurrentEffect, IO, Sync}
+import cats.effect.concurrent.Ref
+
 import com.typesafe.config.ConfigFactory
+
 import fs2.Stream
-import gsheets4s.model.Credentials
+
 import io.circe.config.syntax._
 import io.circe.generic.auto._
+
 import org.http4s.implicits._
 import org.http4s.server.blaze._
 
-import config._
+import gsheets4s.model.Credentials
+
+import clabot.config._
 
 object Server extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
@@ -46,7 +52,7 @@ object ServerStream {
   def getGithubService[F[_]: Sync](token: String): GithubService[F] =
     new GithubServiceImpl[F](token)
 
-  def stream[F[_]: ConcurrentEffect: NonEmptyParallel1: Timer]: Stream[F, ExitCode] =
+  def stream[F[_]: ConcurrentEffect: NonEmptyParallel: Timer]: Stream[F, ExitCode] =
     for {
       config         <- Stream.eval(getConfig[F])
       sheetService   <- Stream.eval(

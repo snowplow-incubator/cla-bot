@@ -12,21 +12,23 @@
  */
 package clabot
 
+import cats.NonEmptyParallel
 import cats.implicits._
 import cats.data.OptionT
 import cats.effect._
+
 import io.circe.generic.auto._
+
 import org.http4s._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.util.CaseInsensitiveString
 
-import config.CLAConfig
-import GithubService._
-import model.{Issue, IssueCommentEvent, PullRequestEvent}
-import NonEmptyParallel1.nonEmptyParallelFromNonEmptyParallel1
+import clabot.config.CLAConfig
+import clabot.GithubService._
+import clabot.model.{Issue, IssueCommentEvent, PullRequestEvent}
 
-class WebhookRoutes[F[_]: Sync: NonEmptyParallel1](
+class WebhookRoutes[F[_]: Sync: NonEmptyParallel](
   sheetsService: GSheetsService[F],
   githubService: GithubService[F],
   claConfig: CLAConfig
