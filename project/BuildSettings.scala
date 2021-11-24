@@ -4,6 +4,8 @@ import sbt.Keys._
 import com.typesafe.sbt.packager.docker._
 import com.typesafe.sbt.packager.Keys._
 
+import sbtdynver.DynVerPlugin.autoImport._
+
 object BuildSettings {
 
   lazy val baseSettings = Seq(
@@ -37,5 +39,10 @@ object BuildSettings {
         val oldStrategy = (assembly / assemblyMergeStrategy).value
         oldStrategy(x)
     }
+  )
+
+  lazy val dynVerSettings = Seq(
+    ThisBuild / dynverVTagPrefix := false, // Otherwise git tags required to have v-prefix
+    ThisBuild / dynverSeparator := "-" // to be compatible with docker
   )
 }
