@@ -18,13 +18,13 @@ lazy val gsheets4s = project.in(file("gsheets4s"))
 lazy val claBot = project.in(file("clabot"))
   .settings(Seq(
     organization := "com.snowplowanalytics",
-    version := "0.2.0",
     name := "cla-bot",
     licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
   ))
   .settings(BuildSettings.baseSettings)
   .settings(BuildSettings.dockerSettings)
   .settings(BuildSettings.assemblySettings)
+  .settings(BuildSettings.dynVerSettings)
   .settings(libraryDependencies := Dependencies.All)
   .dependsOn(gsheets4s)
   .enablePlugins(JavaServerAppPackaging)
