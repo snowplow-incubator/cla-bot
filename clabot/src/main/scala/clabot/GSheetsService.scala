@@ -16,12 +16,13 @@ import cats.data.EitherT
 import cats.implicits._
 import cats.effect._
 import cats.effect.concurrent.Ref
-import cats.syntax.either._
+
 import eu.timepit.refined.api.RefType
+
 import gsheets4s._
 import gsheets4s.model._
 
-import config.GoogleSheet
+import clabot.config.GoogleSheet
 
 trait GSheetsService[F[_]] {
   def findLogin(login: String): F[Option[String]]

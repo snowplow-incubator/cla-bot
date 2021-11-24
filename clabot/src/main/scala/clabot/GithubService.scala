@@ -14,14 +14,16 @@ package clabot
 
 import cats.implicits._
 import cats.effect.Sync
+
 import github4s.Github
 import github4s.Github._
 import github4s.GithubResponses.GHResponse
 import github4s.cats.effect.jvm.Implicits._
 import github4s.free.domain.{Comment, Label}
+
 import scalaj.http.HttpResponse
 
-import model._
+import clabot.model._
 
 trait GithubService[F[_]] {
   import GithubService._

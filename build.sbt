@@ -11,53 +11,20 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import com.typesafe.sbt.packager.docker._
+lazy val gsheets4s = project.in(file("gsheets4s"))
+  .settings(BuildSettings.baseSettings)
+  .settings(libraryDependencies := Dependencies.Gsheets4s)
 
-lazy val baseSettings = Seq(
-  scalacOptions in (Compile, console) ~= {
-    _.filterNot(Set("-Ywarn-unused-import"))
-  },
-  scalacOptions in (Test, console) ~= {
-    _.filterNot(Set("-Ywarn-unused-import"))
-  },
-  organization := "com.snowplowanalytics",
-  scalaVersion := "2.12.8",
-  version := "0.2.0",
-  name := "cla-bot",
-  licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
-)
-
-lazy val dockerSettings = Seq(
-  dockerBaseImage := "openjdk:8u171-jre-alpine",
-  dockerExposedPorts := Seq(8080)
-)
-
-lazy val http4sVersion = "0.20.9"
-lazy val circeVersion = "0.11.1"
-lazy val circeConfigVersion = "0.6.1"
-lazy val github4sVersion = "0.20.1"
-lazy val gsheeets4sVersion = "0.2.0"
-lazy val logbackVersion = "1.2.3"
-lazy val specs2Version = "4.6.0"
-lazy val mockitoVersion = "0.3.0"
-
-lazy val claBot = project.in(file("."))
+lazy val claBot = project.in(file("clabot"))
+  .settings(Seq(
+    organization := "com.snowplowanalytics",
+    scalaVersion := "2.12.8",
+    version := "0.2.0",
+    name := "cla-bot",
+    licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
+  ))
+  .settings(BuildSettings.baseSettings)
+  .settings(BuildSettings.dockerSettings)
+  .settings(libraryDependencies := Dependencies.All)
+  .dependsOn(gsheets4s)
   .enablePlugins(JavaServerAppPackaging)
-  .settings(baseSettings)
-  .settings(dockerSettings)
-  .settings(
-    libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-dsl",
-      "org.http4s" %% "http4s-blaze-server",
-      "org.http4s" %% "http4s-circe",
-    ).map(_ % http4sVersion) ++ Seq(
-      "io.circe" %% "circe-generic" % circeVersion,
-      "io.circe" %% "circe-config" % circeConfigVersion,
-      "com.47deg" %% "github4s-cats-effect" % github4sVersion,
-      "com.github.benfradet" %% "gsheets4s" % gsheeets4sVersion,
-      "ch.qos.logback" % "logback-classic" % logbackVersion,
-    ) ++ Seq(
-      "org.specs2" %% "specs2-core",
-      "org.specs2" %% "specs2-mock",
-    ).map(_ % specs2Version % "test")
-  )
