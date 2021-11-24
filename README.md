@@ -74,7 +74,7 @@ Or run the jar directly:
 ```bash
 sbt assembly
 java -Dconfig.file=application.conf \
-  -jar target/scala-2.12/cla-bot-0.2.0.jar
+  -jar clabot/target/scala-2.13/cla-bot-0.3.0.jar
 ```
 
 ### How the bot algorithm works
