@@ -1,7 +1,5 @@
 package gsheets4s
 
-import scala.language.experimental.macros
-
 import cats.Show
 import cats.syntax.apply._
 import cats.syntax.either._
@@ -93,8 +91,12 @@ object model extends A1NotationLiteralSyntax {
         c.prefix.tree match {
           case Apply(_, List(Apply(_, (lcp@Literal(Constant(p: String))) :: Nil))) =>
             val valid = validate(p)
-            if (valid.isRight) construct(c.Expr(lcp))
-            else c.abort(c.enclosingPosition, s"invalid $typeName: ${valid.left.get}")
+            valid match {
+              case Left(value) => c.abort(c.enclosingPosition, s"invalid $typeName: $value")
+              case Right(_) => construct(c.Expr(lcp))
+            }
+          case tree =>
+            c.abort(c.enclosingPosition, s"not applicable to $tree")
         }
       }
     }
@@ -115,9 +117,10 @@ object model extends A1NotationLiteralSyntax {
   sealed abstract class Dimension(val value: String)
   case object Rows extends Dimension("ROWS")
   case object Columns extends Dimension("COLUMNS")
-  implicit val dimensionDecoder: Decoder[Dimension] = Decoder.decodeString.map {
-    case Rows.value => Rows
-    case Columns.value => Columns
+  implicit val dimensionDecoder: Decoder[Dimension] = Decoder.decodeString.emap {
+    case Rows.value => Rows.asRight
+    case Columns.value => Columns.asRight
+    case other => s"Unexpected value $other".asLeft
   }
   implicit val dimensionEncoder: Encoder[Dimension] = Encoder.encodeString.contramap(_.value)
 
