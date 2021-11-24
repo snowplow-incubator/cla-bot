@@ -15,7 +15,6 @@ package clabot
 import cats.data.EitherT
 import cats.implicits._
 import cats.effect._
-import cats.effect.concurrent.Ref
 
 import eu.timepit.refined.api.RefType
 

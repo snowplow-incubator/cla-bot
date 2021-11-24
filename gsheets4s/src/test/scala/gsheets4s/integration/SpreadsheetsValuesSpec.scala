@@ -1,14 +1,18 @@
 package gsheets4s
 package integration
 
-import cats.effect.IO
-import cats.effect.concurrent.Ref
+import cats.effect.{ IO, Ref }
+import cats.effect.unsafe.IORuntime
+
 import eu.timepit.refined.auto._
+
 import org.specs2.mutable.Specification
 
-import model._
+import gsheets4s.model._
 
 class SpreadsheetsValuesSpec extends Specification {
+
+  implicit val runtime = IORuntime.global
 
   skipAllIf(sys.env.get("GSHEETS4S_ACCESS_TOKEN").isEmpty)
 

@@ -1,7 +1,6 @@
 package gsheets4s
 
-import cats.effect.Sync
-import cats.effect.concurrent.Ref
+import cats.effect.{ Sync, Ref }
 
 import algebras._
 import http._

@@ -13,21 +13,28 @@
 package clabot
 
 import cats.data.NonEmptyList
-import cats.effect.{ContextShift, IO}
 import cats.implicits._
-import github4s.free.domain.{Comment, Label}
+
+import cats.effect.IO
+import cats.effect.unsafe.IORuntime
+
 import fs2.Stream
-import io.circe.generic.auto._
+
 import io.circe.syntax._
+
 import org.http4s._
 import org.http4s.implicits._
+
+import github4s.domain.{Comment, Label}
+
+import org.typelevel.ci.CIString
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 
-import config._
-import GithubService.{NoLabel, YesLabel}
-import model._
+import clabot.config._
+import clabot.GithubService.{NoLabel, YesLabel}
+import clabot.model._
 
 class GsheetsServiceTestImpl extends GSheetsService[IO] {
 
@@ -42,7 +49,7 @@ class GithubServiceTestImpl extends GithubService[IO] {
     if(issue.number === 0)
       IO.pure(List.empty)
     else
-      IO.pure(List(Label(None, NoLabel.value, "foo", "foo", None)))
+      IO.pure(List(Label(NoLabel.value, "foo", None, None, None)))
 
   override def addLabel(
     repo: Repository,
@@ -53,7 +60,7 @@ class GithubServiceTestImpl extends GithubService[IO] {
   override def removeNoLabel(repo: Repository, issue: Issue): IO[List[Label]] = IO.pure(List.empty)
 
   override def postComment(repo: Repository, issue: Issue, text: String): IO[Comment] =
-    IO.pure(Comment(0, "foo", "foo", "foo", None, "foo", "foo"))
+    IO.pure(Comment(0L, "foo", "foo", "foo", "foo", "foo", None))
 
   override def findCollaborator(organization: Repository, user: User): IO[Option[String]] =
     if(user.login === "userCollaborator")
@@ -63,28 +70,28 @@ class GithubServiceTestImpl extends GithubService[IO] {
 }
 
 class WebhookRoutesSpec extends Specification with Mockito {
-  implicit val cs: ContextShift[IO] =
-    IO.contextShift(scala.concurrent.ExecutionContext.Implicits.global)
+
+  implicit val runtime = IORuntime.global
 
   val sampleRepo = Repository("repo", User("owner"))
 
   private def prEventRequest(login: String) = {
-    val prHeaders = Headers.of(Header("X-GitHub-Event", "pull_request"))
+    val prHeaders = Headers(Header.Raw(CIString("X-GitHub-Event"), "pull_request"))
     val body = Stream.emits(
       PullRequestEvent("opened", 1, sampleRepo, User(login)).asJson.noSpaces.getBytes)
 
-    Request[IO](method = Method.POST, uri = Uri.uri("/webhook"), headers = prHeaders, body = body)
+    Request[IO](method = Method.POST, uri = uri"/webhook", headers = prHeaders, body = body)
   }
 
   private def commentEventRequest(login: String, number: Int) = {
-    val issueHeaders = Headers.of(Header("X-GitHub-Event", "issue_comment"))
+    val issueHeaders = Headers(Header.Raw(CIString("X-GitHub-Event"), "issue_comment"))
     val body = Stream.emits(
       IssueCommentEvent("created", Issue(number, User(login).some), sampleRepo, User(login))
         .asJson.noSpaces.getBytes
     )
 
     Request[IO](
-      method = Method.POST, uri = Uri.uri("/webhook"), headers = issueHeaders, body = body)
+      method = Method.POST, uri = uri"/webhook", headers = issueHeaders, body = body)
   }
 
   val config = CLAConfig(

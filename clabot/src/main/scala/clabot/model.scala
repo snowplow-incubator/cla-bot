@@ -12,6 +12,9 @@
  */
 package clabot
 
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto._
+
 object model {
 
   /**
@@ -27,6 +30,11 @@ object model {
     repository: Repository,
     sender: User,
   )
+
+  implicit val ioCircePullRequestEventDecoder: Decoder[PullRequestEvent] =
+    deriveDecoder[PullRequestEvent]
+  implicit val ioCircePullRequestEventEncoder: Encoder[PullRequestEvent] =
+    deriveEncoder[PullRequestEvent]
 
 
   /**
@@ -44,8 +52,30 @@ object model {
     sender: User
   )
 
+  implicit val ioCirceIssueCommentEventDecoder: Decoder[IssueCommentEvent] =
+    deriveDecoder[IssueCommentEvent]
+  implicit val ioCirceIssueCommentEventEncoder: Encoder[IssueCommentEvent] =
+    deriveEncoder[IssueCommentEvent]
+
 
   final case class Issue(number: Int, user: Option[User] = None)
+
+  implicit val ioCirceIssueDecoder: Decoder[Issue] =
+    deriveDecoder[Issue]
+  implicit val ioCirceIssueEncoder: Encoder[Issue] =
+    deriveEncoder[Issue]
+
   final case class Repository(name: String, owner: User)
+
+  implicit val ioCirceRepositoryDecoder: Decoder[Repository] =
+    deriveDecoder[Repository]
+  implicit val ioCirceRepositoryEncoder: Encoder[Repository] =
+    deriveEncoder[Repository]
+
   final case class User(login: String) // shared between `sender` and `owner` fields
+
+  implicit val ioCirceUserDecoder: Decoder[User] =
+    deriveDecoder[User]
+  implicit val ioCirceUserEncoder: Encoder[User] =
+    deriveEncoder[User]
 }
