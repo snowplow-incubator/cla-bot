@@ -22,37 +22,25 @@ import com.typesafe.config.ConfigFactory
 import io.circe.config.syntax._
 import io.circe.generic.auto._
 
-import org.http4s.client.Client
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.blaze.server.BlazeServerBuilder
 
-import gsheets4s.model.Credentials
 
 import clabot.config._
 
 object Main extends ResourceApp.Simple {
   def run = runServer[IO]
 
-  def runServer[F[_]: Async: NonEmptyParallel] =
+  def runServer[F[_] : Async: NonEmptyParallel] =
     for {
-      config        <- Resource.eval(getConfig[F])
-      httpClient    <- BlazeClientBuilder[F].resource
-      sheetService  <- Resource.eval(getSheetsService[F](httpClient, config.gsheets, config.cla.individualCLA, config.cla.corporateCLA))
-      githubService  = new GithubServiceImpl[F](httpClient, config.github.token)
-      webhookRoutes  = new WebhookRoutes[F](sheetService, githubService, config.cla)
-      _             <- BlazeServerBuilder[F].bindHttp(config.port, config.host).withHttpApp(webhookRoutes.routes.orNotFound).resource
+      config <- Resource.eval(getConfig[F])
+      httpClient <- BlazeClientBuilder[F].resource
+      sheetService <- Resource.eval(GSheetsService[F](config.cla.individualCLA, config.cla.corporateCLA, config.oathCredPath))
+      githubService = new GithubServiceImpl[F](httpClient, config.github.token)
+      webhookRoutes = new WebhookRoutes[F](sheetService, githubService, config.cla)
+      _ <- BlazeServerBuilder[F].bindHttp(config.port, config.host).withHttpApp(webhookRoutes.routes.orNotFound).resource
     } yield ()
 
-  def getConfig[F[_]: Sync]: F[CLABotConfig] =
+  def getConfig[F[_] : Sync]: F[CLABotConfig] =
     Sync[F].delay(ConfigFactory.load().as[CLABotConfig]).flatMap(Sync[F].fromEither)
-
-  def getSheetsService[F[_]: Concurrent](
-    httpClient: Client[F],
-    config: GSheetsConfig,
-    individualCLA: GoogleSheet,
-    corporateCLA: GoogleSheet
-  ): F[GSheetsService[F]] =
-    Ref.of[F, Credentials](config.toCredentials)
-      .map(credsRef => new GSheetsServiceImpl[F](httpClient, credsRef, individualCLA, corporateCLA))
-
 }

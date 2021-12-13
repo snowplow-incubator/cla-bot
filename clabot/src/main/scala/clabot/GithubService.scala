@@ -60,7 +60,8 @@ class GithubServiceImpl[F[_]: Concurrent](client: Client[F], token: String) exte
   def findCollaborator(repo: Repository, user: User): F[Option[String]] =
     gh.repos.listCollaborators(repo.owner.login, repo.name)
       .flatMap(extractResult)
-      .map(users => users.map(_.login).find(_ === user.login))
+      .map(users => users.map(_.login)
+        .find(_ === user.login))
 }
 
 object GithubService {
