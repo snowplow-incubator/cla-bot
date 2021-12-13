@@ -17,42 +17,26 @@ object Dependencies {
     lazy val logback = "1.2.7"
     lazy val specs2 = "4.13.0"
     lazy val mockito = "0.3.0"
+    lazy val oauthVersion = "1.3.0"
+    lazy val gapiVersion = "v4-rev581-1.25.0"
   }
 
-  lazy val Gsheets4s = Seq(
-    "org.typelevel"   %% "cats-effect"         % V.catsEffect,
-    "eu.timepit"      %% "refined"             % V.refined,
-    "io.lemonlabs"    %% "scala-uri"           % V.scalaUri,
-
-    "io.circe"        %% "circe-core"          % V.circe,
-    "io.circe"        %% "circe-generic"       % V.circe,
-    "io.circe"        %% "circe-parser"        % V.circe,
-
-    "org.tpolecat"    %% "atto-core"           % V.atto,
-    "org.tpolecat"    %% "atto-refined"        % V.atto,
-
-    "org.http4s"      %% "http4s-blaze-client" % V.http4s,
-    "org.http4s"      %% "http4s-circe"        % V.http4s,
-
-    "org.specs2"      %% "specs2-core"         % V.specs2     % Test,
-    "org.specs2"      %% "specs2-mock"         % V.specs2     % Test,
-    "org.scalacheck"  %% "scalacheck"          % V.scalacheck % Test,
-    "eu.timepit"      %% "refined-scalacheck"  % V.refined    % Test
-  )
-
   lazy val All = Seq(
-    "org.http4s"              %% "http4s-dsl"           % V.http4s,
-    "org.http4s"              %% "http4s-blaze-server"  % V.http4s,
-    "org.http4s"              %% "http4s-blaze-client"  % V.http4s,
-    "org.http4s"              %% "http4s-circe"         % V.http4s,
+    "org.http4s" %% "http4s-dsl" % V.http4s,
+    "org.http4s" %% "http4s-blaze-server" % V.http4s,
+    "org.http4s" %% "http4s-blaze-client" % V.http4s,
+    "org.http4s" %% "http4s-circe" % V.http4s,
 
-    "io.circe"                %% "circe-generic"        % V.circe,
-    "io.circe"                %% "circe-config"         % V.circeConfig,
+    "io.circe" %% "circe-generic" % V.circe,
+    "io.circe" %% "circe-config" % V.circeConfig,
 
-    "com.47deg"               %% "github4s"             % V.github4s,
-    "ch.qos.logback"          %  "logback-classic"      % V.logback,
+    "com.google.auth" % "google-auth-library-oauth2-http" % V.oauthVersion,
+    "com.google.apis" % "google-api-services-sheets" % V.gapiVersion,
 
-    "org.specs2"              %% "specs2-core"          % V.specs2     % Test,
-    "org.specs2"              %% "specs2-mock"          % V.specs2     % Test
+    "com.47deg" %% "github4s" % V.github4s,
+    "ch.qos.logback" % "logback-classic" % V.logback,
+
+    "org.specs2" %% "specs2-core" % V.specs2 % Test,
+    "org.specs2" %% "specs2-mock" % V.specs2 % Test
   )
 }

@@ -11,10 +11,6 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-lazy val gsheets4s = project.in(file("gsheets4s"))
-  .settings(BuildSettings.baseSettings)
-  .settings(libraryDependencies := Dependencies.Gsheets4s)
-
 lazy val claBot = project.in(file("clabot"))
   .settings(Seq(
     organization := "com.snowplowanalytics",
@@ -26,5 +22,4 @@ lazy val claBot = project.in(file("clabot"))
   .settings(BuildSettings.assemblySettings)
   .settings(BuildSettings.dynVerSettings)
   .settings(libraryDependencies := Dependencies.All)
-  .dependsOn(gsheets4s)
   .enablePlugins(JavaServerAppPackaging)
