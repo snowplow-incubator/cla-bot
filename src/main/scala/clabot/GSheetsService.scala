@@ -12,53 +12,63 @@
  */
 package clabot
 
-import cats.data.EitherT
 import cats.implicits._
 import cats.effect._
 import cats.effect.concurrent.Ref
-import cats.syntax.either._
-import eu.timepit.refined.api.RefType
-import gsheets4s._
-import gsheets4s.model._
-
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
+import com.google.api.client.http.javanet.NetHttpTransport
+import com.google.api.client.json.jackson2.JacksonFactory
+import com.google.api.services.sheets.v4.Sheets
+import com.google.auth.http.HttpCredentialsAdapter
+import com.google.auth.oauth2.ServiceAccountCredentials
 import config.GoogleSheet
+
+import java.io.FileInputStream
+import scala.collection.JavaConverters._
 
 trait GSheetsService[F[_]] {
   def findLogin(login: String): F[Option[String]]
 }
 
-class GSheetsServiceImpl[F[_]: Sync](
-  credentials: Ref[F, Credentials],
-  individualCLA: GoogleSheet,
-  corporateCLA: GoogleSheet
-) extends GSheetsService[F] {
+class GSheetsServiceImpl[F[_] : Sync](
+                                       client: Ref[F, Sheets],
+                                       individualCLA: GoogleSheet,
+                                       corporateCLA: GoogleSheet
+                                     ) extends GSheetsService[F] {
 
-  import GSheetsService._
+  def findLogin(login: String): F[Option[String]] = for {
+    a <- getAll(individualCLA)
+    b <- getAll(corporateCLA)
+  } yield (a ++ b).find(_ === login)
 
-  def findLogin(login: String): F[Option[String]] =
-    getAll(individualCLA).map(logins => logins.find(_ === login))
-      .orElse(getAll(corporateCLA).map(logins => logins.find(_ === login)))
-
-  private def colPosition(col: String): Either[GSheetsException, ColPosition] =
-    RefType.applyRef[Col](col)
-      .map(ColPosition)
-      .leftMap(msg => GSheetsException(msg))
 
   private def getAll(googleSheet: GoogleSheet): F[List[String]] = {
-    val program: EitherT[F, GSheetsException, List[String]] = for {
-      cols <- googleSheet.columns.traverse(c => EitherT.fromEither[F](colPosition(c)))
-      spreadsheetValues =  GSheets4s[F](credentials).spreadsheetsValues
-      ranges = cols.map(c => SheetNameRangeNotation(googleSheet.sheetName, Range(c, c)))
-      valueRanges <- ranges.traverse { r =>
-        EitherT(spreadsheetValues.get(googleSheet.spreadsheetId, r))
-          .leftMap(e => GSheetsException(e.message))
-      }
-    } yield valueRanges.map(_.values.flatten).toList.flatten
-
-    program.value.flatMap(Sync[F].fromEither)
+    client.get.map(client =>
+      googleSheet.range.flatMap(range =>
+        client.spreadsheets.values.get(googleSheet.spreadsheetId, range).execute
+          .getValues
+          .asScala.toList.flatMap(_.asScala.toList)
+          .map(_.toString)
+      )
+    )
   }
 }
 
 object GSheetsService {
   final case class GSheetsException(msg: String) extends RuntimeException(msg)
+
+  private val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport
+  private val JSON_FACTORY: JacksonFactory = JacksonFactory.getDefaultInstance
+
+  def apply[F[_] : Sync](individualCLA: GoogleSheet,
+                         corporateCLA: GoogleSheet,
+                         credPath: String): F[GSheetsService[F]] = {
+
+    val v = ServiceAccountCredentials.fromStream(new FileInputStream(credPath))
+      .createScoped("https://www.googleapis.com/auth/spreadsheets")
+    val service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, new HttpCredentialsAdapter(v))
+      .setApplicationName("cla-bot").build
+    Ref.of(service).map(client =>
+      new GSheetsServiceImpl(client, individualCLA, corporateCLA))
+  }
 }

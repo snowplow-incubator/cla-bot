@@ -69,7 +69,8 @@ class GithubServiceImpl[F[_]: Sync](token: String) extends GithubService[F] {
     gh.repos.listCollaborators(repo.owner.login, repo.name)
       .exec[F, HttpResponse[String]]()
       .flatMap(extractResult)
-      .map(users => users.map(_.login).find(_ === user.login))
+      .map(users => users.map(_.login)
+        .find(_ === user.login))
 }
 
 object GithubService {

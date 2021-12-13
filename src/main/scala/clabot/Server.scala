@@ -13,18 +13,15 @@
 package clabot
 
 import cats.effect.{ExitCode, IOApp, Timer}
-import cats.effect.concurrent.Ref
-import cats.implicits._
 import cats.effect.{ConcurrentEffect, IO, Sync}
 import com.typesafe.config.ConfigFactory
 import fs2.Stream
-import gsheets4s.model.Credentials
 import io.circe.config.syntax._
 import io.circe.generic.auto._
 import org.http4s.implicits._
 import org.http4s.server.blaze._
-
 import config._
+
 
 object Server extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
@@ -32,28 +29,19 @@ object Server extends IOApp {
 }
 
 object ServerStream {
-  def getConfig[F[_]: Sync]: F[CLABotConfig] =
+  def getConfig[F[_] : Sync]: F[CLABotConfig] =
     Sync[F].fromEither(ConfigFactory.load().as[CLABotConfig])
 
-  def getSheetsService[F[_]: Sync](
-    config: GSheetsConfig,
-    individualCLA: GoogleSheet,
-    corporateCLA: GoogleSheet
-  ): F[GSheetsService[F]] =
-    Ref.of[F, Credentials](config.toCredentials)
-      .map(credsRef => new GSheetsServiceImpl[F](credsRef, individualCLA, corporateCLA))
-
-  def getGithubService[F[_]: Sync](token: String): GithubService[F] =
+  def getGithubService[F[_] : Sync](token: String): GithubService[F] =
     new GithubServiceImpl[F](token)
 
-  def stream[F[_]: ConcurrentEffect: NonEmptyParallel1: Timer]: Stream[F, ExitCode] =
+  def stream[F[_] : ConcurrentEffect : NonEmptyParallel1 : Timer]: Stream[F, ExitCode] =
     for {
-      config         <- Stream.eval(getConfig[F])
-      sheetService   <- Stream.eval(
-        getSheetsService[F](config.gsheets, config.cla.individualCLA, config.cla.corporateCLA))
-      githubService  =  getGithubService[F](config.github.token)
-      webhookRoutes  =  new WebhookRoutes[F](sheetService, githubService, config.cla)
-      exitCode       <- BlazeServerBuilder[F]
+      config <- Stream.eval(getConfig[F])
+        githubService = getGithubService[F](config.github.token)
+      sheetService <-  Stream.eval(GSheetsService(config.cla.individualCLA, config.cla.corporateCLA, config.oathCredPath))
+      webhookRoutes = new WebhookRoutes[F](sheetService, githubService, config.cla)
+      exitCode <- BlazeServerBuilder[F]
         .bindHttp(config.port, config.host)
         .withHttpApp(webhookRoutes.routes.orNotFound)
         .serve

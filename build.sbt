@@ -14,15 +14,15 @@
 import com.typesafe.sbt.packager.docker._
 
 lazy val baseSettings = Seq(
-  scalacOptions in (Compile, console) ~= {
+  scalacOptions in(Compile, console) ~= {
     _.filterNot(Set("-Ywarn-unused-import"))
   },
-  scalacOptions in (Test, console) ~= {
+  scalacOptions in(Test, console) ~= {
     _.filterNot(Set("-Ywarn-unused-import"))
   },
   organization := "com.snowplowanalytics",
   scalaVersion := "2.12.8",
-  version := "0.2.0",
+  version := "0.2.1",
   name := "cla-bot",
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 )
@@ -40,6 +40,9 @@ lazy val gsheeets4sVersion = "0.2.0"
 lazy val logbackVersion = "1.2.3"
 lazy val specs2Version = "4.6.0"
 lazy val mockitoVersion = "0.3.0"
+lazy val oauthVersion = "1.3.0"
+lazy val gapiVersion = "v4-rev581-1.25.0"
+
 
 lazy val claBot = project.in(file("."))
   .enablePlugins(JavaServerAppPackaging)
@@ -51,13 +54,14 @@ lazy val claBot = project.in(file("."))
       "org.http4s" %% "http4s-blaze-server",
       "org.http4s" %% "http4s-circe",
     ).map(_ % http4sVersion) ++ Seq(
+      "com.google.auth" % "google-auth-library-oauth2-http" % oauthVersion,
+      "com.google.apis" % "google-api-services-sheets" % gapiVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-config" % circeConfigVersion,
       "com.47deg" %% "github4s-cats-effect" % github4sVersion,
-      "com.github.benfradet" %% "gsheets4s" % gsheeets4sVersion,
-      "ch.qos.logback" % "logback-classic" % logbackVersion,
+      "ch.qos.logback" % "logback-classic" % logbackVersion
     ) ++ Seq(
       "org.specs2" %% "specs2-core",
-      "org.specs2" %% "specs2-mock",
+      "org.specs2" %% "specs2-mock"
     ).map(_ % specs2Version % "test")
   )

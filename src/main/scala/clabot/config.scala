@@ -13,38 +13,30 @@
 package clabot
 
 import cats.data.NonEmptyList
-import gsheets4s.model.Credentials
 
 object config {
 
   final case class GithubConfig(token: String)
 
   final case class GoogleSheet(
-    spreadsheetId: String,
-    sheetName: String,
-    columns: NonEmptyList[String]
-  )
-
-  final case class CLAConfig(
-    individualCLA: GoogleSheet,
-    corporateCLA: GoogleSheet,
-    peopleToIgnore: List[String]
-  )
-
-  final case class GSheetsConfig(
-    accessToken: String,
-    refreshToken: String,
-    clientId: String,
-    clientSecret: String
-  ) {
-    def toCredentials: Credentials = Credentials(accessToken, refreshToken, clientId, clientSecret)
+                                spreadsheetId: String,
+                                sheetName: String,
+                                columns: NonEmptyList[String]
+                              ) {
+    def range: List[String] = columns.map(col => s"$sheetName!$col:$col").toList
   }
 
+  final case class CLAConfig(
+                              individualCLA: GoogleSheet,
+                              corporateCLA: GoogleSheet,
+                              peopleToIgnore: List[String]
+                            )
+
   final case class CLABotConfig(
-    port: Int,
-    host: String,
-    github: GithubConfig,
-    gsheets: GSheetsConfig,
-    cla: CLAConfig
-  )
+                                 port: Int,
+                                 host: String,
+                                 github: GithubConfig,
+                                 oathCredPath: String,
+                                 cla: CLAConfig
+                               )
 }
