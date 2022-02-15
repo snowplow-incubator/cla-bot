@@ -38,7 +38,7 @@ lazy val circeConfigVersion = "0.6.1"
 lazy val github4sVersion = "0.20.1"
 lazy val gsheeets4sVersion = "0.2.0"
 lazy val logbackVersion = "1.2.3"
-lazy val specs2Version = "4.6.0"
+lazy val specs2Version = "4.13.3"
 lazy val mockitoVersion = "0.3.0"
 
 lazy val claBot = project.in(file("."))
