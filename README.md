@@ -2,7 +2,6 @@
 
 [![License][license-image]][license]
 ![Build](https://github.com/snowplow-incubator/cla-bot/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/bintray/v/snowplow/snowplow-generic/cla-bot)][bintray]
 
 Snowplow CLA bot is a web server which handles GitHub webhook events to check whether
 PR authors have signed the CLA. It uses Google Sheets as a data source.
@@ -111,8 +110,6 @@ limitations under the License.
 
 [license-image]: https://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
 [license]: http://www.apache.org/licenses/LICENSE-2.0
-
-[bintray]: https://bintray.com/snowplow/snowplow-generic/cla-bot
 
 [webhooks]: https://developer.github.com/webhooks/
 [log4j]: https://docs.oracle.com/cd/E29578_01/webhelp/cas_webcrawler/src/cwcg_config_log4j_file.html
