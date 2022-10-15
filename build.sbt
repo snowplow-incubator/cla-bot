@@ -14,10 +14,10 @@
 import com.typesafe.sbt.packager.docker._
 
 lazy val baseSettings = Seq(
-  scalacOptions in (Compile, console) ~= {
+  (Compile / console / scalacOptions) ~= {
     _.filterNot(Set("-Ywarn-unused-import"))
   },
-  scalacOptions in (Test, console) ~= {
+  (Test / console / scalacOptions) ~= {
     _.filterNot(Set("-Ywarn-unused-import"))
   },
   organization := "com.snowplowanalytics",
