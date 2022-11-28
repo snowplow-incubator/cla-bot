@@ -1,7 +1,6 @@
 import sbt._
 import sbt.Keys._
 
-import com.typesafe.sbt.packager.docker._
 import com.typesafe.sbt.packager.Keys._
 
 import sbtdynver.DynVerPlugin.autoImport._
@@ -17,11 +16,6 @@ object BuildSettings {
       _.filterNot(Set("-Ywarn-unused-import"))
     },
     evictionErrorLevel := sbt.util.Level.Warn
-  )
-  
-  lazy val dockerSettings = Seq(
-    dockerBaseImage := "openjdk:8u171-jre-alpine",
-    dockerExposedPorts := Seq(8080)
   )
 
   /** sbt-assembly settings for building a fat jar */
