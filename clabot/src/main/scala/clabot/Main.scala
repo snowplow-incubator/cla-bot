@@ -28,10 +28,13 @@ import org.http4s.blaze.server.BlazeServerBuilder
 
 import clabot.config._
 
-object Main extends ResourceApp.Simple {
-  def run = runServer[IO]
+object Main extends IOApp {
+  def run(args: List[String]): IO[ExitCode] =
+    buildServer[IO]
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
 
-  def runServer[F[_] : Async: NonEmptyParallel] =
+  def buildServer[F[_] : Async: NonEmptyParallel] =
     for {
       config <- Resource.eval(getConfig[F])
       httpClient <- BlazeClientBuilder[F].resource
