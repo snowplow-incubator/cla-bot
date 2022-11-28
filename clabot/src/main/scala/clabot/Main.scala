@@ -28,8 +28,11 @@ import org.http4s.blaze.server.BlazeServerBuilder
 
 import clabot.config._
 
-object Main extends ResourceApp.Simple {
-  def run = runServer[IO]
+object Main extends IOApp {
+  def run(args: List[String]): IO[ExitCode] =
+    runServer[IO]
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
 
   def runServer[F[_] : Async: NonEmptyParallel] =
     for {
