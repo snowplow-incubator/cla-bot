@@ -31,15 +31,11 @@ port = 8080
 host = localhost
 
 github {
-  token = 1234567890abcdefghijk
+  # a token from the bot account, get at https://github.com/settings/tokens
+  token = GITHUB_TOKEN
 }
 
-gsheets {
-  clientId     = GOOGLE_SHEETS_CLIENT_ID
-  clientSecret = GOOGLE_SHEETS_CLIENT_SECRET
-  accessToken  = GOOGLE_ACCESS_TOKEN
-  refreshToken = GOOGLE_REFRESH_TOKEN
-}
+oathCredPath = PATH_TO_CRED_JSON
 
 cla {
   individualCLA {
@@ -74,7 +70,7 @@ Or run the jar directly:
 ```bash
 sbt assembly
 java -Dconfig.file=application.conf \
-  -jar target/scala-2.12/cla-bot-0.2.0.jar
+  -jar clabot/target/scala-2.13/cla-bot-0.3.0.jar
 ```
 
 ### How the bot algorithm works
@@ -97,7 +93,7 @@ java -Dconfig.file=application.conf \
 
 ## Copyright and license
 
-The Snowplow CLA Bot is copyright 2018-2020 Snowplow Analytics Ltd.
+The Snowplow CLA Bot is copyright 2018-2022 Snowplow Analytics Ltd.
 
 Licensed under the **[Apache License, Version 2.0][license]** (the "License");
 you may not use this software except in compliance with the License.
