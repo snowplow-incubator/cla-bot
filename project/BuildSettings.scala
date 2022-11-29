@@ -8,7 +8,7 @@ import sbtdynver.DynVerPlugin.autoImport._
 object BuildSettings {
 
   lazy val baseSettings = Seq(
-    scalaVersion := "2.13.7",
+    scalaVersion := "2.13.9",
     Compile / console / scalacOptions ~= {
       _.filterNot(Set("-Ywarn-unused-import"))
     },
