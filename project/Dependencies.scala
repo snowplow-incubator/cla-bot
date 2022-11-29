@@ -15,6 +15,7 @@ object Dependencies {
     lazy val circeConfig = "0.8.0"
     lazy val github4s = "0.30.0"
     lazy val logback = "1.2.7"
+    lazy val slf4j = "2.0.5"
     lazy val specs2 = "4.13.0"
     lazy val mockito = "0.3.0"
     lazy val oauthVersion = "1.13.0"
@@ -37,6 +38,7 @@ object Dependencies {
 
     "com.47deg" %% "github4s" % V.github4s,
     "ch.qos.logback" % "logback-classic" % V.logback,
+    "org.slf4j" % "slf4j-api" % V.slf4j,
 
     "org.specs2" %% "specs2-core" % V.specs2 % Test,
     "org.specs2" %% "specs2-mock" % V.specs2 % Test
