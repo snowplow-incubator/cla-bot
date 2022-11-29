@@ -31,14 +31,16 @@ trait GSheetsService[F[_]] {
 
 class GSheetsServiceImpl[F[_] : Sync](
                                        client: Ref[F, Sheets],
+                                       internalCLA: GoogleSheet,
                                        individualCLA: GoogleSheet,
                                        corporateCLA: GoogleSheet
                                      ) extends GSheetsService[F] {
 
   def findLogin(login: String): F[Option[String]] = for {
-    a <- getAll(individualCLA)
-    b <- getAll(corporateCLA)
-  } yield (a ++ b).find(_ === login)
+    a <- getAll(internalCLA)
+    b <- getAll(individualCLA)
+    c <- getAll(corporateCLA)
+  } yield (a ++ b ++ c).find(_ === login)
 
 
   private def getAll(googleSheet: GoogleSheet): F[List[String]] = {
@@ -59,7 +61,8 @@ object GSheetsService {
   private val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport
   private val JSON_FACTORY: GsonFactory = GsonFactory.getDefaultInstance
 
-  def apply[F[_] : Sync](individualCLA: GoogleSheet,
+  def apply[F[_] : Sync](internalCLA: GoogleSheet,
+                         individualCLA: GoogleSheet,
                          corporateCLA: GoogleSheet,
                          credPath: String): F[GSheetsService[F]] = {
 
@@ -69,6 +72,6 @@ object GSheetsService {
       .setApplicationName("cla-bot").build
 
     Ref[F].of(service).map(sheetClient =>
-      new GSheetsServiceImpl(sheetClient, individualCLA, corporateCLA))
+      new GSheetsServiceImpl(sheetClient, internalCLA, individualCLA, corporateCLA))
   }
 }

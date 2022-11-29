@@ -33,6 +33,13 @@ github {
 oathCredPath = PATH_TO_CRED_JSON
 
 cla {
+  internalCLA {
+    # id of the spreadsheet (the one from the spreadsheet URL)
+    spreadsheetId = GOOGLE_SPREADSHEET_ID
+    sheetName     = GOOGLE_SPREADSHEET_NAME
+    # columns containing GitHub logins
+    columns        = [ A ]
+  }
   individualCLA {
     # id of the spreadsheet (the one from the spreadsheet URL)
     spreadsheetId = GOOGLE_SPREADSHEET_ID
@@ -63,7 +70,9 @@ java -Dconfig.file=application.conf \
 ### How the bot algorithm works
 
 ##### Pull Request is opened
-- If user submitting the PR is a collaborator (this includes members of the organization), the bot ignores the PR.
+- If user submitting the PR is a collaborator (this includes members of the organization), ensure that the user is recorded in either:
+  - the `peopleToIgnore` list or
+  - the `internalCLA` sheet
 
 - If the user is not a collaborator
   - and is in the `peopleToIgnore` list, or
