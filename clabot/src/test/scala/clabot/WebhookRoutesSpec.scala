@@ -97,6 +97,7 @@ class WebhookRoutesSpec extends Specification with Mockito {
   val config = CLAConfig(
     GoogleSheet("spreadsheet-id", "sheet-name", NonEmptyList.one("column")),
     GoogleSheet("spreadsheet-id", "sheet-name", NonEmptyList.one("column")),
+    GoogleSheet("spreadsheet-id", "sheet-name", NonEmptyList.one("column")),
     List("ignore")
   )
 

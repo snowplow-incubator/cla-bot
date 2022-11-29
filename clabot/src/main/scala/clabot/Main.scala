@@ -38,7 +38,7 @@ object Main extends IOApp {
     for {
       config <- Resource.eval(getConfig[F])
       httpClient <- BlazeClientBuilder[F].resource
-      sheetService <- Resource.eval(GSheetsService[F](config.cla.individualCLA, config.cla.corporateCLA, config.oathCredPath))
+      sheetService <- Resource.eval(GSheetsService[F](config.cla.internalCLA, config.cla.individualCLA, config.cla.corporateCLA, config.oathCredPath))
       githubService = new GithubServiceImpl[F](httpClient, config.github.token)
       webhookRoutes = new WebhookRoutes[F](sheetService, githubService, config.cla)
       _ <- BlazeServerBuilder[F].bindHttp(config.port, config.host).withHttpApp(webhookRoutes.routes.orNotFound).resource
