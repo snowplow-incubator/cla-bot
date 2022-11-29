@@ -42,6 +42,13 @@ gsheets {
 }
 
 cla {
+  internalCLA {
+    # id of the spreadsheet (the one from the spreadsheet URL)
+    spreadsheetId = GOOGLE_SPREADSHEET_ID
+    sheetName     = GOOGLE_SPREADSHEET_NAME
+    # columns containing GitHub logins
+    columns        = [ A ]
+  }
   individualCLA {
     # id of the spreadsheet (the one from the spreadsheet URL)
     spreadsheetId = GOOGLE_SPREADSHEET_ID
@@ -82,6 +89,8 @@ java -Dconfig.file=application.conf \
 ##### Pull Request is opened
 - If user submitting the PR is a collaborator (this includes members of the organization),
   the bot ignores the PR.
+
+- If the user is a collaborator (and to combat failures in listing collaborators) add them to the `internalCLA` sheet.
 
 - If the user is not a collaborator
   - and is in the `peopleToIgnore` list, or
