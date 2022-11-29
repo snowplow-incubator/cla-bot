@@ -38,7 +38,6 @@ object Dependencies {
 
     "com.47deg" %% "github4s" % V.github4s,
     "ch.qos.logback" % "logback-classic" % V.logback,
-    "org.slf4j" % "slf4j-api" % V.slf4j,
 
     "org.specs2" %% "specs2-core" % V.specs2 % Test,
     "org.specs2" %% "specs2-mock" % V.specs2 % Test
