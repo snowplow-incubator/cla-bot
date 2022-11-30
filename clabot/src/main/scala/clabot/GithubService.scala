@@ -21,6 +21,8 @@ import github4s.domain.{Comment, Label}
 
 import org.http4s.client.Client
 
+import org.slf4j.LoggerFactory
+
 import clabot.model._
 
 trait GithubService[F[_]] {
@@ -45,26 +47,38 @@ class GithubServiceImpl[F[_]: Concurrent](client: Client[F], token: String) exte
   private def extractResult[A](response: GHResponse[A]): F[A] =
     Concurrent[F].fromEither(response.result)
 
-  def listLabels(repo: Repository, issue: Issue): F[List[Label]] =
+  def listLabels(repo: Repository, issue: Issue): F[List[Label]] = {
+    logger.info(s"Listing labels on repo '${repo.owner.login}/${repo.name}' for issue '${issue.number}'")
     gh.issues.listLabels(repo.owner.login, repo.name, issue.number).flatMap(extractResult)
+  }
 
-  def addLabel(repo: Repository, issue: Issue, label: ClaLabel): F[List[Label]] =
+  def addLabel(repo: Repository, issue: Issue, label: ClaLabel): F[List[Label]] = {
+    logger.info(s"Adding label '${label.value}' on repo '${repo.owner.login}/${repo.name}' for issue '${issue.number}'")
     gh.issues.addLabels(repo.owner.login, repo.name, issue.number, List(label.value)).flatMap(extractResult)
+  }
 
-  def removeNoLabel(repo: Repository, issue: Issue): F[List[Label]] =
+  def removeNoLabel(repo: Repository, issue: Issue): F[List[Label]] = {
+    logger.info(s"Removing label '${NoLabel.value}' on repo '${repo.owner.login}/${repo.name}' for issue '${issue.number}'")
     gh.issues.removeLabel(repo.owner.login, repo.name, issue.number, NoLabel.value).flatMap(extractResult)
+  }
 
-  def postComment(repo: Repository, issue: Issue, text: String): F[Comment] =
+  def postComment(repo: Repository, issue: Issue, text: String): F[Comment] = {
+    logger.info(s"Posting comment on repo '${repo.owner.login}/${repo.name}' for issue '${issue.number}'")
     gh.issues.createComment(repo.owner.login, repo.name, issue.number, text).flatMap(extractResult)
+  }
 
-  def findCollaborator(repo: Repository, user: User): F[Option[String]] =
+  def findCollaborator(repo: Repository, user: User): F[Option[String]] = {
+    logger.info(s"Checking collaborators on repo '${repo.owner.login}/${repo.name}' against user '${user.login}'")
     gh.repos.listCollaborators(repo.owner.login, repo.name)
       .flatMap(extractResult)
       .map(users => users.map(_.login)
         .find(_ === user.login))
+  }
 }
 
 object GithubService {
+  lazy val logger = LoggerFactory.getLogger(GithubService.getClass)
+
   val noMessage = """Thanks for your pull request. Is this your first contribution to a Snowplow open source project? Before we can look at your pull request, you'll need to sign a Contributor License Agreement (CLA).
                     |
                     |:memo: Please visit https://docs.snowplowanalytics.com/docs/contributing/contributor-license-agreement/ to learn more and sign.
