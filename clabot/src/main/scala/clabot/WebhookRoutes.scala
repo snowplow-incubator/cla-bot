@@ -37,6 +37,7 @@ class WebhookRoutes[F[_]: Concurrent: NonEmptyParallel](
   import WebhookRoutes._
 
   def routes = HttpRoutes.of[F] {
+    case GET -> Root / "health" => Ok("OK")
     case req @ POST -> Root / "webhook" =>
       val eventType = req.headers
         .get(GitHubEvent)
