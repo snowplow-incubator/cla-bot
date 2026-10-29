@@ -69,10 +69,10 @@ class GithubServiceImpl[F[_]: Concurrent](client: Client[F], token: String) exte
 
   def findCollaborator(repo: Repository, user: User): F[Option[String]] = {
     logger.info(s"Checking collaborators on repo '${repo.owner.login}/${repo.name}' against user '${user.login}'")
-    gh.repos.listCollaborators(repo.owner.login, repo.name)
+    // Checks the single user rather than listing collaborators, which is paginated (30 per page)
+    gh.repos.userIsCollaborator(repo.owner.login, repo.name, user.login)
       .flatMap(extractResult)
-      .map(users => users.map(_.login)
-        .find(_ === user.login))
+      .map(isCollaborator => if (isCollaborator) Some(user.login) else None)
   }
 }
 

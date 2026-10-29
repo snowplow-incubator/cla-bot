@@ -67,11 +67,11 @@ class WebhookRoutes[F[_]: Concurrent: NonEmptyParallel](
   }
 
   def handlePullRequest(prEvent: PullRequestEvent, peopleToIgnore: List[String]): F[Unit] =
-    if (prEvent.action === "opened") handleNewPullRequest(prEvent, peopleToIgnore)
+    if (prEvent.action === "opened" && !prEvent.repository.`private`) handleNewPullRequest(prEvent, peopleToIgnore)
     else Concurrent[F].unit
 
   def handleNewPullRequest(prEvent: PullRequestEvent, peopleToIgnore: List[String]): F[Unit] =
-    if (peopleToIgnore.contains(prEvent.sender.login)) Concurrent[F].unit
+    if (peopleToIgnore.contains(prEvent.sender.login) || isBot(prEvent.sender.login)) Concurrent[F].unit
     else OptionT(githubService.findCollaborator(prEvent.repository, prEvent.sender))
       .void
       .orElse(handleNotCollaborator(prEvent))
@@ -89,7 +89,7 @@ class WebhookRoutes[F[_]: Concurrent: NonEmptyParallel](
   }
 
   def handleIssueComment(commentEvent: IssueCommentEvent): F[Unit] =
-    if (commentEvent.action == "created") handleNewComment(commentEvent)
+    if (commentEvent.action == "created" && !commentEvent.repository.`private`) handleNewComment(commentEvent)
     else Concurrent[F].unit
 
   def handleNewComment(commentEvent: IssueCommentEvent): F[Unit] = {
@@ -120,4 +120,7 @@ object WebhookRoutes {
   val Ping = Header.Raw(GitHubEvent, "ping")
   val IssueComment = Header.Raw(GitHubEvent, "issue_comment")
   val PullRequest = Header.Raw(GitHubEvent, "pull_request")
+
+  /** GitHub App and bot accounts (e.g. dependabot[bot]) can't sign a CLA */
+  def isBot(login: String): Boolean = login.endsWith("[bot]")
 }

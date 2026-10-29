@@ -65,7 +65,11 @@ object model {
   implicit val ioCirceIssueEncoder: Encoder[Issue] =
     deriveEncoder[Issue]
 
-  final case class Repository(name: String, owner: User)
+  /**
+   * @param private whether the repository is private, private repositories are not checked
+   *                as only org members and invited collaborators can open pull requests on them
+   */
+  final case class Repository(name: String, owner: User, `private`: Boolean)
 
   implicit val ioCirceRepositoryDecoder: Decoder[Repository] =
     deriveDecoder[Repository]
