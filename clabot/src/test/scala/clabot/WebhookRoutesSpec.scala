@@ -73,20 +73,22 @@ class WebhookRoutesSpec extends Specification with Mockito {
 
   implicit val runtime = IORuntime.global
 
-  val sampleRepo = Repository("repo", User("owner"))
+  val sampleRepo = Repository("repo", User("owner"), false)
 
-  private def prEventRequest(login: String) = {
+  val privateRepo = Repository("repo", User("owner"), true)
+
+  private def prEventRequest(login: String, repo: Repository = sampleRepo) = {
     val prHeaders = Headers(Header.Raw(CIString("X-GitHub-Event"), "pull_request"))
     val body = Stream.emits(
-      PullRequestEvent("opened", 1, sampleRepo, User(login)).asJson.noSpaces.getBytes)
+      PullRequestEvent("opened", 1, repo, User(login)).asJson.noSpaces.getBytes)
 
     Request[IO](method = Method.POST, uri = uri"/webhook", headers = prHeaders, body = body)
   }
 
-  private def commentEventRequest(login: String, number: Int) = {
+  private def commentEventRequest(login: String, number: Int, repo: Repository = sampleRepo) = {
     val issueHeaders = Headers(Header.Raw(CIString("X-GitHub-Event"), "issue_comment"))
     val body = Stream.emits(
-      IssueCommentEvent("created", Issue(number, User(login).some), sampleRepo, User(login))
+      IssueCommentEvent("created", Issue(number, User(login).some), repo, User(login))
         .asJson.noSpaces.getBytes
     )
 
@@ -111,9 +113,9 @@ class WebhookRoutesSpec extends Specification with Mockito {
 
       there was one(gsheetsMock).findLogin("userWithNoCla")
       there was one(githubMock)
-        .addLabel(Repository("repo", User("owner")), Issue(1), NoLabel)
+        .addLabel(Repository("repo", User("owner"), false), Issue(1), NoLabel)
       there was one(githubMock)
-        .postComment(Repository("repo", User("owner")), Issue(1), GithubService.noMessage)
+        .postComment(Repository("repo", User("owner"), false), Issue(1), GithubService.noMessage)
     }
 
     "add a label but not comment if user has signed CLA" in {
@@ -125,8 +127,8 @@ class WebhookRoutesSpec extends Specification with Mockito {
 
       there was one(gsheetsMock).findLogin("userWithCla")
       there was one(githubMock)
-        .addLabel(Repository("repo", User("owner")), Issue(1), YesLabel)
-      there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
+        .addLabel(Repository("repo", User("owner"), false), Issue(1), YesLabel)
+      there was no(githubMock).postComment(Repository("", User(""), false), Issue(0), "")
     }
 
     "not do anything if user is a collaborator" in {
@@ -137,8 +139,8 @@ class WebhookRoutesSpec extends Specification with Mockito {
       endpoints(prEventRequest("userCollaborator")).unsafeRunSync()
 
       there was no(gsheetsMock).findLogin("")
-      there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
-      there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
+      there was no(githubMock).addLabel(Repository("", User(""), false), Issue(0), YesLabel)
+      there was no(githubMock).postComment(Repository("", User(""), false), Issue(0), "")
     }
 
     "not do anything if user is in the list of people to ignore" in {
@@ -149,8 +151,8 @@ class WebhookRoutesSpec extends Specification with Mockito {
       endpoints(prEventRequest("ignore")).unsafeRunSync()
 
       there was no(gsheetsMock).findLogin("")
-      there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
-      there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
+      there was no(githubMock).addLabel(Repository("", User(""), false), Issue(0), YesLabel)
+      there was no(githubMock).postComment(Repository("", User(""), false), Issue(0), "")
     }
 
     "not do anything if pinged and there is no 'cla:no' label" in {
@@ -161,8 +163,8 @@ class WebhookRoutesSpec extends Specification with Mockito {
       endpoints(commentEventRequest("userWithCla", 0)).unsafeRunSync()
 
       there was no(gsheetsMock).findLogin("")
-      there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
-      there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
+      there was no(githubMock).addLabel(Repository("", User(""), false), Issue(0), YesLabel)
+      there was no(githubMock).postComment(Repository("", User(""), false), Issue(0), "")
     }
 
     "not post a comment if pinged and there is a no label but user has not yet signed the cla" in {
@@ -173,8 +175,8 @@ class WebhookRoutesSpec extends Specification with Mockito {
       endpoints(commentEventRequest("userWithoutCla", 1)).unsafeRunSync()
 
       there was one(gsheetsMock).findLogin("userWithoutCla")
-      there was no(githubMock).addLabel(Repository("", User("")), Issue(0), YesLabel)
-      there was no(githubMock).postComment(Repository("", User("")), Issue(0), "")
+      there was no(githubMock).addLabel(Repository("", User(""), false), Issue(0), YesLabel)
+      there was no(githubMock).postComment(Repository("", User(""), false), Issue(0), "")
     }
 
     "post a comment if pinged, there is 'cla:no' label and user has signed the cla" in {
@@ -186,12 +188,48 @@ class WebhookRoutesSpec extends Specification with Mockito {
 
       there was one(gsheetsMock).findLogin("userWithCla")
       there was one(githubMock).addLabel(
-        Repository("repo", User("owner")), Issue(1, Some(User("userWithCla"))), YesLabel)
+        Repository("repo", User("owner"), false), Issue(1, Some(User("userWithCla"))), YesLabel)
       there was one(githubMock).postComment(
-        Repository("repo", User("owner")),
+        Repository("repo", User("owner"), false),
         Issue(1, Some(User("userWithCla"))),
         GithubService.thanksMessage("userWithCla")
       )
+    }
+    "not do anything on new pull request if the repository is private" in {
+      val gsheetsMock = spy(new GsheetsServiceTestImpl)
+      val githubMock  = spy(new GithubServiceTestImpl)
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
+
+      endpoints(prEventRequest("userWithNoCla", privateRepo)).unsafeRunSync()
+
+      there was no(githubMock).findCollaborator(privateRepo, User("userWithNoCla"))
+      there was no(gsheetsMock).findLogin("userWithNoCla")
+      there was no(githubMock).addLabel(privateRepo, Issue(1), NoLabel)
+      there was no(githubMock).postComment(privateRepo, Issue(1), GithubService.noMessage)
+    }
+
+    "not do anything if the user is a bot" in {
+      val gsheetsMock = spy(new GsheetsServiceTestImpl)
+      val githubMock  = spy(new GithubServiceTestImpl)
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
+
+      endpoints(prEventRequest("dependabot[bot]")).unsafeRunSync()
+
+      there was no(gsheetsMock).findLogin("dependabot[bot]")
+      there was no(githubMock).addLabel(sampleRepo, Issue(1), NoLabel)
+      there was no(githubMock).postComment(sampleRepo, Issue(1), GithubService.noMessage)
+    }
+
+    "not do anything if pinged on a private repository" in {
+      val gsheetsMock = spy(new GsheetsServiceTestImpl)
+      val githubMock  = spy(new GithubServiceTestImpl)
+      val endpoints = new WebhookRoutes[IO](gsheetsMock, githubMock, config).routes.orNotFound
+
+      endpoints(commentEventRequest("userWithCla", 1, privateRepo)).unsafeRunSync()
+
+      there was no(gsheetsMock).findLogin("userWithCla")
+      there was no(githubMock).addLabel(
+        privateRepo, Issue(1, Some(User("userWithCla"))), YesLabel)
     }
   }
 
